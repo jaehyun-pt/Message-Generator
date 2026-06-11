@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>내신 전 학부모 안내 멘트 생성기</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css">
+<script src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: { sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'] },
+      colors: { accent: { DEFAULT: '#2563EB', light: '#EFF6FF', dark: '#1D4ED8' } }
+    }
+  }
+}
+</script>
+<style>
+  * { word-break: keep-all; }
+  .message-box { white-space: pre-wrap; }
+  .sidebar-item.active { background-color: #EFF6FF; }
+  .sidebar-item.active .s-name { color: #2563EB; font-weight: 600; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 2px; }
+  .modal-overlay { backdrop-filter: blur(4px); }
+  .rule-textarea { resize: vertical; min-height: 80px; font-size: 13px; line-height: 1.7; }
+  .tab-active { background: #EFF6FF; color: #2563EB; font-weight: 600; }
+  .tab-inactive { color: #6B7280; }
+  .tab-inactive:hover { color: #374151; background: #F9FAFB; }
+  .drop-zone.drag-over { border-color: #2563EB; background: #EFF6FF; }
+</style>
+</head>
+<body class="bg-gray-50 font-sans">
+
+<!-- ── 레이아웃 ── -->
+<div class="flex" style="height:100vh;">
+
+  <!-- 사이드바 -->
+  <aside class="w-64 shrink-0 bg-white border-r border-gray-100 flex flex-col" style="height:100vh;">
+    <div class="px-4 py-4 border-b border-gray-100">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 bg-blue-50 rounded-lg flex items-center justify-center">
+            <iconify-icon icon="solar:document-text-bold-duotone" class="text-blue-600" style="font-size:16px;"></iconify-icon>
+          </div>
+          <span class="text-sm font-semibold text-gray-900">내신 멘트 생성기</span>
+        </div>
+        <button onclick="openSettings()" title="작성 규칙 설정"
+          class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+          <iconify-icon icon="solar:settings-bold-duotone" style="font-size:16px;"></iconify-icon>
+        </button>
+      </div>
+      <div class="flex gap-1">
+        <button onclick="filterStudents('all')" data-filter="all" class="filter-btn flex-1 px-2 py-1 text-xs font-medium rounded-md bg-blue-50 text-blue-600 transition-colors">전체</button>
+        <button onclick="filterStudents('하락')" data-filter="하락" class="filter-btn flex-1 px-2 py-1 text-xs font-medium rounded-md text-gray-500 hover:text-gray-700 transition-colors">하락</button>
+        <button onclick="filterStudents('유지')" data-filter="유지" class="filter-btn flex-1 px-2 py-1 text-xs font-medium rounded-md text-gray-500 hover:text-gray-700 transition-colors">유지</button>
+        <button onclick="filterStudents('상승')" data-filter="상승" class="filter-btn flex-1 px-2 py-1 text-xs font-medium rounded-md text-gray-500 hover:text-gray-700 transition-colors">상승</button>
+      </div>
+    </div>
+    <div class="flex-1 overflow-y-auto py-2" id="studentList">
+      <!-- empty state -->
+      <div id="sidebarEmpty" class="px-4 py-6 text-center">
+        <iconify-icon icon="solar:users-group-rounded-bold-duotone" class="text-gray-300" style="font-size:32px;"></iconify-icon>
+        <p class="text-xs text-gray-400 mt-2 leading-relaxed">CSV 파일을 업로드하면<br>학생 목록이 표시됩니다</p>
+      </div>
+    </div>
+    <div class="px-4 py-3 border-t border-gray-100 grid grid-cols-3 gap-2">
+      <div class="text-center"><div class="text-xs text-red-400 font-medium" id="countDown">-</div><div class="text-xs text-gray-400 mt-0.5">하락</div></div>
+      <div class="text-center"><div class="text-xs text-amber-500 font-medium" id="countMid">-</div><div class="text-xs text-gray-400 mt-0.5">유지</div></div>
+      <div class="text-center"><div class="text-xs text-emerald-500 font-medium" id="countUp">-</div><div class="text-xs text-gray-400 mt-0.5">상승</div></div>
+    </div>
+  </aside>
+
+  <!-- 메인 -->
+  <main class="flex-1 flex flex-col overflow-hidden">
+    <header class="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b border-gray-100 px-6 py-3 flex items-center justify-between">
+      <div>
+        <h1 class="text-base font-semibold text-gray-900">학부모 안내 멘트 생성</h1>
+        <p class="text-xs text-gray-400 mt-0.5">학생 데이터를 바탕으로 맞춤형 학부모 안내 멘트를 자동 생성합니다</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="openCsvModal()" class="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+          <iconify-icon icon="solar:upload-bold-duotone" style="font-size:14px;"></iconify-icon>
+          CSV 업로드
+        </button>
+        <button onclick="generateAll()" id="genAllBtn" disabled
+          class="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+          <iconify-icon icon="solar:magic-stick-bold-duotone" style="font-size:14px;"></iconify-icon>
+          전체 생성
+        </button>
+      </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-6">
+      <!-- 초기 안내 -->
+      <div id="emptyState" class="flex flex-col items-center justify-center" style="min-height:400px;">
+        <div class="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center mb-4">
+          <iconify-icon icon="solar:file-text-bold-duotone" class="text-blue-300" style="font-size:36px;"></iconify-icon>
+        </div>
+        <p class="text-gray-600 font-medium">CSV 파일을 업로드해 시작하세요</p>
+        <p class="text-gray-400 text-sm mt-1 text-center leading-relaxed">상단의 CSV 업로드 버튼을 클릭하거나<br>아래 버튼으로 샘플 데이터를 불러올 수 있습니다</p>
+        <button onclick="loadSampleData()" class="mt-4 flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors">
+          <iconify-icon icon="solar:database-bold-duotone" style="font-size:16px;"></iconify-icon>
+          샘플 데이터 불러오기
+        </button>
+      </div>
+
+      <!-- 전체 생성 결과 -->
+      <div id="allResults" class="hidden space-y-4"></div>
+
+      <!-- 개별 학생 상세 -->
+      <div id="studentDetail" class="hidden space-y-5">
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+          <div class="flex items-start justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-sm font-bold" id="detailAvatar"></div>
+              <div>
+                <h2 class="text-lg font-bold text-gray-900" id="detailName"></h2>
+                <div class="flex items-center gap-2 mt-0.5">
+                  <span class="text-sm text-gray-500" id="detailGrade"></span>
+                  <span class="w-1 h-1 rounded-full bg-gray-300"></span>
+                  <span id="detailResultBadge" class="px-2 py-0.5 rounded-full text-xs font-medium"></span>
+                </div>
+              </div>
+            </div>
+            <button onclick="generateSingle()"
+              class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+              <iconify-icon icon="solar:magic-stick-bold-duotone" style="font-size:16px;"></iconify-icon>
+              멘트 생성
+            </button>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-gray-50 rounded-xl p-3"><p class="text-xs text-gray-400 mb-1">시험 일정</p><p class="text-sm text-gray-700 font-medium" id="detailSchedule"></p></div>
+            <div class="bg-gray-50 rounded-xl p-3"><p class="text-xs text-gray-400 mb-1">시험 대비 현황</p><p class="text-sm text-gray-700 font-medium" id="detailPrep"></p></div>
+            <div class="bg-gray-50 rounded-xl p-3"><p class="text-xs text-gray-400 mb-1">이전 성적</p><p class="text-sm text-gray-700 font-medium" id="detailPrevScore"></p></div>
+            <div class="bg-gray-50 rounded-xl p-3"><p class="text-xs text-gray-400 mb-1">목표 성적</p><p class="text-sm text-gray-700 font-medium" id="detailTargetScore"></p></div>
+            <div class="bg-gray-50 rounded-xl p-3 col-span-2"><p class="text-xs text-gray-400 mb-1">시험 범위</p><p class="text-sm text-gray-700 font-medium" id="detailScope"></p></div>
+          </div>
+        </div>
+        <div id="messageArea" class="hidden">
+          <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <iconify-icon icon="solar:chat-round-bold-duotone" class="text-blue-500" style="font-size:18px;"></iconify-icon>
+                <span class="text-sm font-semibold text-gray-900">생성된 안내 멘트</span>
+              </div>
+              <div class="flex gap-2">
+                <button onclick="generateSingle()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                  <iconify-icon icon="solar:refresh-bold-duotone" style="font-size:14px;"></iconify-icon>재생성
+                </button>
+                <button onclick="copyMessage()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                  <iconify-icon icon="solar:copy-bold-duotone" style="font-size:14px;"></iconify-icon>복사
+                </button>
+              </div>
+            </div>
+            <div id="messageContent" class="message-box text-sm text-gray-700 leading-relaxed bg-gray-50 rounded-xl p-4 border border-gray-100"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════
+     CSV 업로드 모달
+══════════════════════════════════════ -->
+<div id="csvModal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-overlay bg-black/30">
+  <div class="bg-white rounded-2xl shadow-lg w-full max-w-xl mx-4 overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <iconify-icon icon="solar:file-text-bold-duotone" class="text-blue-500" style="font-size:20px;"></iconify-icon>
+        <span class="text-base font-semibold text-gray-900">학생 DB CSV 업로드</span>
+      </div>
+      <button onclick="closeCsvModal()" class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+        <iconify-icon icon="solar:close-bold" style="font-size:16px;"></iconify-icon>
+      </button>
+    </div>
+    <div class="p-6 space-y-4">
+
+      <!-- 드래그앤드롭 영역 -->
+      <div id="dropZone" class="drop-zone border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-blue-300 hover:bg-blue-50/30 transition-colors"
+           onclick="document.getElementById('csvFileInput').click()"
+           ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+        <iconify-icon icon="solar:upload-bold-duotone" class="text-gray-300" style="font-size:36px;"></iconify-icon>
+        <p class="text-sm font-medium text-gray-500 mt-2">CSV 파일을 드래그하거나 클릭하여 선택</p>
+        <p class="text-xs text-gray-400 mt-1">UTF-8 인코딩 권장</p>
+        <input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="handleFileSelect(event)">
+      </div>
+
+      <!-- 컬럼 매핑 안내 -->
+      <div class="bg-gray-50 rounded-xl p-4">
+        <p class="text-xs font-semibold text-gray-500 mb-2">필수 CSV 컬럼 (첫 행 = 헤더)</p>
+        <div class="grid grid-cols-2 gap-1">
+          <div class="text-xs text-gray-500"><span class="font-mono bg-white border border-gray-200 rounded px-1 py-0.5">학생명</span></div>
+          <div class="text-xs text-gray-500"><span class="font-mono bg-white border border-gray-200 rounded px-1 py-0.5">학년</span></div>
+          <div class="text-xs text-gray-500"><span class="font-mono bg-white border border-gray-200 rounded px-1 py-0.5">시험 일정</span></div>
+          <div class="text-xs text-gray-500"><span class="font-mono bg-white border border-gray-200 rounded px-1 py-0.5">시험범위</span></div>
+          <div class="text-xs text-gray-500"><span class="font-mono bg-white border border-gray-200 rounded px-1 py-0.5">시험대비 현황</span></div>
+          <div class="text-xs text-gray-500"><span class="font-mono bg-white border border-gray-200 rounded px-1 py-0.5">이전점수</span></div>
+          <div class="text-xs text-gray-500"><span class="font-mono bg-white border border-gray-200 rounded px-1 py-0.5">목표점수</span></div>
+          <div class="text-xs text-gray-500"><span class="font-mono bg-white border border-gray-200 rounded px-1 py-0.5">예상 결과</span></div>
+        </div>
+        <p class="text-xs text-gray-400 mt-2">예상 결과 값: <span class="font-mono">성적 하락(부정)</span> · <span class="font-mono">성적 유지(보통)</span> · <span class="font-mono">성적 상승(긍정)</span></p>
+      </div>
+
+      <!-- 파싱 결과 요약 -->
+      <div id="csvPreview" class="hidden">
+        <div class="bg-gray-50 rounded-xl px-4 py-3 flex items-center justify-between">
+          <p class="text-sm font-medium text-gray-700">총 <span id="previewCount" class="text-blue-600 font-semibold"></span> 명 확인됨</p>
+          <div class="flex gap-2">
+            <span id="previewDown" class="text-xs px-2 py-0.5 rounded-full bg-red-50 text-red-500 font-medium"></span>
+            <span id="previewMid" class="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-500 font-medium"></span>
+            <span id="previewUp" class="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 font-medium"></span>
+          </div>
+        </div>
+      </div>
+
+      <div id="csvError" class="hidden bg-red-50 rounded-xl px-4 py-3 text-sm text-red-600"></div>
+    </div>
+    <div class="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
+      <button onclick="closeCsvModal()" class="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">취소</button>
+      <button onclick="loadCsvData()" id="loadCsvBtn" disabled
+        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+        불러오기
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     설정 모달 (작성 규칙 커스터마이징)
+══════════════════════════════════════ -->
+<div id="settingsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-overlay bg-black/30">
+  <div class="bg-white rounded-2xl shadow-lg w-full max-w-2xl mx-4 flex flex-col" style="max-height:90vh;">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-2">
+        <iconify-icon icon="solar:settings-bold-duotone" class="text-blue-500" style="font-size:20px;"></iconify-icon>
+        <span class="text-base font-semibold text-gray-900">작성 규칙 설정</span>
+      </div>
+      <button onclick="closeSettings()" class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+        <iconify-icon icon="solar:close-bold" style="font-size:16px;"></iconify-icon>
+      </button>
+    </div>
+
+    <!-- 탭 -->
+    <div class="px-6 pt-4 shrink-0">
+      <div class="flex gap-1 border-b border-gray-100 pb-0">
+        <button onclick="switchSettingsTab('decline')" data-stab="decline" class="settings-tab px-4 py-2 text-sm rounded-t-lg tab-active transition-colors">
+          성적 하락
+        </button>
+        <button onclick="switchSettingsTab('maintain')" data-stab="maintain" class="settings-tab px-4 py-2 text-sm rounded-t-lg tab-inactive transition-colors">
+          성적 유지
+        </button>
+        <button onclick="switchSettingsTab('improve')" data-stab="improve" class="settings-tab px-4 py-2 text-sm rounded-t-lg tab-inactive transition-colors">
+          성적 상승
+        </button>
+      </div>
+    </div>
+
+    <!-- 탭 내용 -->
+    <div class="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+
+      <!-- 하락 탭 -->
+      <div id="stab-decline" class="space-y-4">
+        <div class="bg-red-50 rounded-xl px-4 py-3">
+          <p class="text-xs font-semibold text-red-500 mb-1">적용 원칙</p>
+          <p class="text-xs text-red-400 leading-relaxed">성적 하락 가능성을 숨기거나 단정적으로 표현하지 않으며, 학생의 긍정적 변화와 개선 계획을 함께 제시하여 학부모가 신뢰를 느낄 수 있도록 작성합니다.</p>
+        </div>
+        <div class="rule-section">
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5">인사말 <span class="font-normal text-gray-400">(한 줄에 하나씩 — 학생마다 랜덤 선택)</span></label>
+          <textarea id="r_decline_greetings" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></textarea>
+        </div>
+        <div class="rule-section">
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5">시험 준비 현황 설명 <span class="font-normal text-gray-400">(준비 유형별로 한 줄씩 — 구분: "개념보충|..." "문제풀이|..." "심화|..." "실전|...")</span></label>
+          <textarea id="r_decline_prep" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" style="min-height:120px;"></textarea>
+        </div>
+        <div class="rule-section">
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5">원인 설명 문구 <span class="font-normal text-gray-400">(한 줄에 하나씩)</span></label>
+          <textarea id="r_decline_reasons" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></textarea>
+        </div>
+        <div class="rule-section">
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5">긍정적 변화 표현 <span class="font-normal text-gray-400">(한 줄에 하나씩)</span></label>
+          <textarea id="r_decline_positive" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></textarea>
+        </div>
+        <div class="rule-section">
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5">시험 후 보완 계획 <span class="font-normal text-gray-400">(한 줄에 하나씩)</span></label>
+          <textarea id="r_decline_afterplan" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></textarea>
+        </div>
+        <div class="rule-section">
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5">다음 시험 개선 전략 <span class="font-normal text-gray-400">(한 줄에 하나씩)</span></label>
+          <textarea id="r_decline_nextstrat" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></textarea>
+        </div>
+        <div class="rule-section">
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5">마무리 인사 <span class="font-normal text-gray-400">(한 줄에 하나씩)</span></label>
+          <textarea id="r_decline_closings" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></textarea>
+        </div>
+      </div>
+
+      <!-- 유지 탭 -->
+      <div id="stab-maintain" class="space-y-4 hidden">
+        <div class="bg-amber-50 rounded-xl px-4 py-3">
+          <p class="text-xs font-semibold text-amber-600 mb-1">적용 원칙</p>
+          <p class="text-xs text-amber-500 leading-relaxed">현재 안정적인 학습 흐름을 유지하고 있음을 신뢰감 있게 전달하고, 목표 점수 달성을 위한 준비 상황을 구체적으로 안내합니다.</p>
+        </div>
+        <div class="rule-section">
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5">인사말 <span class="font-normal text-gray-400">(한 줄에 하나씩)</span></label>
+          <textarea id="r_maintain_greetings" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></textarea>
+        </div>
+        <div class="rule-section">
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5">시험 준비 현황 설명 <span class="font-normal text-gray-400">(준비 유형별 — "개념보충|..." "문제풀이|..." "심화|..." "실전|...")</span></label>
+          <textarea id="r_maintain_prep" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" style="min-height:120px;"></textarea>
+        </div>
+        <div class="rule-section">
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5">안정적 학습 상태 표현 <span class="font-normal text-gray-400">(한 줄에 하나씩)</span></label>
+          <textarea id="r_maintain_steady" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></textarea>
+        </div>
+        <div class="rule-section">
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5">마무리 인사 <span class="font-normal text-gray-400">(한 줄에 하나씩)</span></label>
+          <textarea id="r_maintain_closings" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></textarea>
+        </div>
+      </div>
+
+      <!-- 상승 탭 -->
+      <div id="stab-improve" class="space-y-4 hidden">
+        <div class="bg-emerald-50 rounded-xl px-4 py-3">
+          <p class="text-xs font-semibold text-emerald-600 mb-1">적용 원칙</p>
+          <p class="text-xs text-emerald-500 leading-relaxed">학생의 성장과 노력을 구체적으로 전달하고, 이전 성적 대비 향상된 부분을 명확히 안내하여 학부모와 기쁨을 함께 나눕니다.</p>
+        </div>
+        <div class="rule-section">
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5">인사말 <span class="font-normal text-gray-400">(한 줄에 하나씩)</span></label>
+          <textarea id="r_improve_greetings" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></textarea>
+        </div>
+        <div class="rule-section">
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5">시험 준비 현황 설명 <span class="font-normal text-gray-400">(준비 유형별 — "개념보충|..." "문제풀이|..." "심화|..." "실전|...")</span></label>
+          <textarea id="r_improve_prep" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" style="min-height:120px;"></textarea>
+        </div>
+        <div class="rule-section">
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5">노력 / 성장 표현 <span class="font-normal text-gray-400">(한 줄에 하나씩)</span></label>
+          <textarea id="r_improve_effort" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></textarea>
+        </div>
+        <div class="rule-section">
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5">마무리 인사 <span class="font-normal text-gray-400">(한 줄에 하나씩)</span></label>
+          <textarea id="r_improve_closings" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between shrink-0">
+      <button onclick="resetRules()" class="text-xs text-gray-400 hover:text-gray-600 transition-colors">기본값으로 초기화</button>
+      <div class="flex gap-2">
+        <button onclick="closeSettings()" class="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">취소</button>
+        <button onclick="saveRules()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     스크립트
+══════════════════════════════════════ -->
+<script>
+
+// ── 기본 규칙 정의 ──────────────────────────────────
+
+const DEFAULT_RULES = {
+  decline: {
+    greetings: [
+      "안녕하세요, 학부모님 😊 {name} 학생 담당 수학 선생님입니다.",
+      "학부모님, 안녕하세요 😊 {name} 학생 수학 담당 선생님입니다.",
+      "안녕하세요, 학부모님 😊 {name} 학생의 수학 수업을 맡고 있는 선생님입니다."
+    ],
+    prep: [
+      "개념보충|{name} 학생의 기초 개념을 탄탄히 다지는 수업을 진행하고 있습니다",
+      "개념보충|핵심 개념 이해를 우선으로 수업을 구성하고 있습니다",
+      "개념보충|개념 완성도를 높이는 데 집중하여 수업을 진행 중입니다",
+      "문제풀이|{name} 학생의 문제 적용력을 높이는 방향으로 수업을 진행하고 있습니다",
+      "문제풀이|다양한 유형의 문제를 반복 훈련하는 방식으로 수업을 구성하고 있습니다",
+      "문제풀이|실전 문제 풀이 중심으로 수업을 진행하며 적용력을 키우고 있습니다",
+      "심화|고난도 문제에 대한 적응력을 높이는 방향으로 수업을 진행하고 있습니다",
+      "심화|심화 유형 문제를 집중 훈련하며 실력 완성 단계에 있습니다",
+      "심화|변별력 있는 문항에 대비한 심화 훈련을 꾸준히 진행하고 있습니다",
+      "실전|실전과 동일한 조건에서 모의 평가를 실시하며 실전 감각을 키우고 있습니다",
+      "실전|시험 환경과 동일한 상황에서 연습을 반복하여 실전 대응력을 높이고 있습니다",
+      "실전|모의 시험을 통한 최종 점검 단계에 있습니다"
+    ],
+    reasons: [
+      "이번 시험 범위가 개념 이해와 적용이 동시에 요구되는 단원인 만큼, 완성도 측면에서 아직 보완이 필요한 부분이 남아 있습니다",
+      "이번 시험 범위가 다소 광범위하고 난이도가 높은 단원을 포함하고 있어 목표 점수 달성까지 추가적인 준비가 필요한 상황입니다",
+      "관련 단원의 개념 적용 문제에서 아직 안정적인 풀이가 이루어지기까지 좀 더 시간이 필요한 상황입니다"
+    ],
+    positive: [
+      "수업 중 질문하는 빈도가 늘었고, 어려운 문제에 끝까지 도전하는 태도가 이전보다 눈에 띄게 향상되었습니다",
+      "수업 참여 자세가 꾸준하고 성실하며, 주어진 과제도 빠짐없이 수행하고 있습니다",
+      "최근 수업에서 집중도가 높아지고 스스로 풀이 과정을 확인하는 습관이 형성되고 있습니다",
+      "이전에 어렵게 느끼던 유형에서 풀이 속도와 정확도 모두 향상되고 있는 점은 고무적입니다",
+      "수업 태도와 집중력 면에서 꾸준한 발전이 확인되고 있으며, 기초 개념에 대한 이해도가 점진적으로 올라오고 있습니다"
+    ],
+    afterplan: [
+      "📝 시험 이후에는 오답 분석을 통해 취약 단원을 정확히 파악하고, 해당 유형을 집중적으로 재학습하는 방향으로 보완 수업을 진행할 예정입니다",
+      "📝 시험 결과를 바탕으로 단원별 부족한 부분을 구체적으로 진단하고, 다음 평가를 위한 보완 계획을 수립하여 즉시 적용할 예정입니다",
+      "📝 시험 후 오답 유형 분석을 실시하고, 반복 실수가 발생한 문제 유형을 중심으로 집중 보강 수업을 진행할 계획입니다"
+    ],
+    nextstrat: [
+      "다음 평가에서는 이번에 확인된 취약 부분을 사전에 충분히 보완하여 보다 안정적인 결과를 만들어 나갈 수 있도록 관리하겠습니다",
+      "다음 시험에서는 이번 준비 과정에서 파악된 보완점을 반영한 맞춤형 학습 계획으로 접근하겠습니다",
+      "이번 경험을 바탕으로 다음 평가에서는 더 탄탄한 준비가 이루어질 수 있도록 단계별로 체계적으로 관리해 나가겠습니다"
+    ],
+    closings: [
+      "항상 {name} 학생의 성장을 응원하며, 궁금하신 점이 있으시면 언제든지 연락 주시기 바랍니다. 감사합니다 🙏",
+      "{name} 학생이 좋은 결과를 낼 수 있도록 끝까지 함께 준비하겠습니다. 감사합니다 🙏",
+      "앞으로도 {name} 학생의 성장을 위해 최선을 다해 지도하겠습니다. 감사합니다 🙏"
+    ]
+  },
+  maintain: {
+    greetings: [
+      "안녕하세요, 학부모님 😊 {name} 학생 담당 수학 선생님입니다.",
+      "학부모님, 안녕하세요 😊 {name} 학생의 수학 수업을 담당하고 있는 선생님입니다.",
+      "안녕하세요, 학부모님 😊 {name} 학생 수학 담당 선생님입니다."
+    ],
+    prep: [
+      "개념보충|{name} 학생의 기초 개념을 탄탄히 다지는 수업을 진행하고 있습니다",
+      "개념보충|핵심 개념 이해를 우선으로 수업을 구성하고 있습니다",
+      "개념보충|개념 완성도를 높이는 데 집중하여 수업을 진행 중입니다",
+      "문제풀이|{name} 학생의 문제 적용력을 높이는 방향으로 수업을 진행하고 있습니다",
+      "문제풀이|다양한 유형의 문제를 반복 훈련하는 방식으로 수업을 구성하고 있습니다",
+      "문제풀이|실전 문제 풀이 중심으로 수업을 진행하며 적용력을 키우고 있습니다",
+      "심화|고난도 문제에 대한 적응력을 높이는 방향으로 수업을 진행하고 있습니다",
+      "심화|심화 유형 문제를 집중 훈련하며 실력 완성 단계에 있습니다",
+      "심화|변별력 있는 문항에 대비한 심화 훈련을 꾸준히 진행하고 있습니다",
+      "실전|실전과 동일한 조건에서 모의 평가를 실시하며 실전 감각을 키우고 있습니다",
+      "실전|시험 환경과 동일한 상황에서 연습을 반복하여 실전 대응력을 높이고 있습니다",
+      "실전|모의 시험을 통한 최종 점검 단계에 있습니다"
+    ],
+    steady: [
+      "수업 참여 태도가 성실하고 과제 수행도 꾸준히 이루어지고 있어, 현재의 학습 흐름이 잘 유지되고 있습니다",
+      "수업 집중도가 안정적으로 유지되고 있으며, 반복 학습을 통해 개념 완성도를 높여가고 있습니다",
+      "현재 학습 페이스가 안정적이며, 주요 단원에 대한 이해도도 점차 높아지고 있습니다"
+    ],
+    closings: [
+      "앞으로도 {name} 학생이 꾸준히 성장할 수 있도록 세심하게 관리하겠습니다. 궁금하신 점이 있으시면 언제든지 연락 주세요. 감사합니다 📚",
+      "시험까지 남은 기간 동안 최선을 다해 지도하겠습니다. 감사합니다 📚",
+      "앞으로도 {name} 학생의 학습 흐름이 잘 이어질 수 있도록 지속적으로 관리해 나가겠습니다. 감사합니다 📚"
+    ]
+  },
+  improve: {
+    greetings: [
+      "안녕하세요, 학부모님 😊 {name} 학생 담당 수학 선생님입니다.",
+      "학부모님, 안녕하세요 😊 {name} 학생의 수학 수업을 담당하고 있는 선생님입니다."
+    ],
+    prep: [
+      "개념보충|{name} 학생의 기초 개념을 탄탄히 다지는 수업을 진행하고 있습니다",
+      "개념보충|핵심 개념 이해를 우선으로 수업을 구성하고 있습니다",
+      "개념보충|개념 완성도를 높이는 데 집중하여 수업을 진행 중입니다",
+      "문제풀이|{name} 학생의 문제 적용력을 높이는 방향으로 수업을 진행하고 있습니다",
+      "문제풀이|다양한 유형의 문제를 반복 훈련하는 방식으로 수업을 구성하고 있습니다",
+      "문제풀이|실전 문제 풀이 중심으로 수업을 진행하며 적용력을 키우고 있습니다",
+      "심화|고난도 문제에 대한 적응력을 높이는 방향으로 수업을 진행하고 있습니다",
+      "심화|심화 유형 문제를 집중 훈련하며 실력 완성 단계에 있습니다",
+      "심화|변별력 있는 문항에 대비한 심화 훈련을 꾸준히 진행하고 있습니다",
+      "실전|실전과 동일한 조건에서 모의 평가를 실시하며 실전 감각을 키우고 있습니다",
+      "실전|시험 환경과 동일한 상황에서 연습을 반복하여 실전 대응력을 높이고 있습니다",
+      "실전|모의 시험을 통한 최종 점검 단계에 있습니다"
+    ],
+    effort: [
+      "최근 수업에서 이해도와 집중력이 크게 향상된 것이 확인되며, 스스로 어려운 문제에 도전하는 태도도 눈에 띄게 성장했습니다",
+      "수업 중 질문의 질이 높아지고 있으며, 개념을 스스로 연결하여 문제에 적용하는 능력이 발전하고 있습니다",
+      "꾸준한 연습과 반복을 통해 풀이 정확도가 향상되었고, 어려운 유형에서도 자신감 있게 접근하는 모습이 자주 보입니다",
+      "최근 들어 오답 분석을 스스로 하려는 태도가 보이고 있으며, 이러한 학습 습관이 실력 향상의 큰 원동력이 되고 있습니다"
+    ],
+    closings: [
+      "앞으로도 이 좋은 흐름이 이어질 수 있도록 끝까지 함께 관리하겠습니다. 궁금하신 점이 있으시면 언제든지 연락 주시기 바랍니다. 감사합니다 💪",
+      "시험까지 남은 기간에도 최선을 다해 지도하여 좋은 결과로 이어질 수 있도록 하겠습니다. 감사합니다 💪",
+      "{name} 학생의 노력이 좋은 결과로 이어질 수 있도록 마지막까지 함께 준비하겠습니다. 감사합니다 💪"
+    ]
+  }
+};
+
+// 현재 규칙 (localStorage 또는 기본값)
+let RULES = JSON.parse(JSON.stringify(DEFAULT_RULES));
+
+function loadRules() {
+  const saved = localStorage.getItem('mentRules');
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      RULES = parsed;
+    } catch(e) {}
+  }
+}
+
+function saveRules() {
+  collectRulesFromUI();
+  localStorage.setItem('mentRules', JSON.stringify(RULES));
+  closeSettings();
+  showToast('작성 규칙이 저장되었습니다');
+}
+
+function resetRules() {
+  if (!confirm('모든 작성 규칙을 기본값으로 초기화할까요?')) return;
+  RULES = JSON.parse(JSON.stringify(DEFAULT_RULES));
+  localStorage.removeItem('mentRules');
+  fillRulesUI();
+  showToast('기본값으로 초기화되었습니다');
+}
+
+// ── 설정 UI ────────────────────────────────────────
+
+function arrToText(arr) { return (arr || []).join('\n'); }
+function textToArr(text) { return text.split('\n').map(l => l.trim()).filter(Boolean); }
+
+function fillRulesUI() {
+  const r = RULES;
+  document.getElementById('r_decline_greetings').value = arrToText(r.decline.greetings);
+  document.getElementById('r_decline_prep').value = arrToText(r.decline.prep);
+  document.getElementById('r_decline_reasons').value = arrToText(r.decline.reasons);
+  document.getElementById('r_decline_positive').value = arrToText(r.decline.positive);
+  document.getElementById('r_decline_afterplan').value = arrToText(r.decline.afterplan);
+  document.getElementById('r_decline_nextstrat').value = arrToText(r.decline.nextstrat);
+  document.getElementById('r_decline_closings').value = arrToText(r.decline.closings);
+  document.getElementById('r_maintain_greetings').value = arrToText(r.maintain.greetings);
+  document.getElementById('r_maintain_prep').value = arrToText(r.maintain.prep);
+  document.getElementById('r_maintain_steady').value = arrToText(r.maintain.steady);
+  document.getElementById('r_maintain_closings').value = arrToText(r.maintain.closings);
+  document.getElementById('r_improve_greetings').value = arrToText(r.improve.greetings);
+  document.getElementById('r_improve_prep').value = arrToText(r.improve.prep);
+  document.getElementById('r_improve_effort').value = arrToText(r.improve.effort);
+  document.getElementById('r_improve_closings').value = arrToText(r.improve.closings);
+}
+
+function collectRulesFromUI() {
+  RULES.decline.greetings = textToArr(document.getElementById('r_decline_greetings').value);
+  RULES.decline.prep = textToArr(document.getElementById('r_decline_prep').value);
+  RULES.decline.reasons = textToArr(document.getElementById('r_decline_reasons').value);
+  RULES.decline.positive = textToArr(document.getElementById('r_decline_positive').value);
+  RULES.decline.afterplan = textToArr(document.getElementById('r_decline_afterplan').value);
+  RULES.decline.nextstrat = textToArr(document.getElementById('r_decline_nextstrat').value);
+  RULES.decline.closings = textToArr(document.getElementById('r_decline_closings').value);
+  RULES.maintain.greetings = textToArr(document.getElementById('r_maintain_greetings').value);
+  RULES.maintain.prep = textToArr(document.getElementById('r_maintain_prep').value);
+  RULES.maintain.steady = textToArr(document.getElementById('r_maintain_steady').value);
+  RULES.maintain.closings = textToArr(document.getElementById('r_maintain_closings').value);
+  RULES.improve.greetings = textToArr(document.getElementById('r_improve_greetings').value);
+  RULES.improve.prep = textToArr(document.getElementById('r_improve_prep').value);
+  RULES.improve.effort = textToArr(document.getElementById('r_improve_effort').value);
+  RULES.improve.closings = textToArr(document.getElementById('r_improve_closings').value);
+}
+
+let currentSettingsTab = 'decline';
+function switchSettingsTab(tab) {
+  currentSettingsTab = tab;
+  ['decline','maintain','improve'].forEach(t => {
+    document.getElementById(`stab-${t}`).classList.toggle('hidden', t !== tab);
+    document.querySelector(`[data-stab="${t}"]`).className =
+      `settings-tab px-4 py-2 text-sm rounded-t-lg transition-colors ${t === tab ? 'tab-active' : 'tab-inactive'}`;
+  });
+}
+
+function openSettings() {
+  fillRulesUI();
+  document.getElementById('settingsModal').classList.remove('hidden');
+}
+function closeSettings() { document.getElementById('settingsModal').classList.add('hidden'); }
+
+// ── CSV 처리 ─────────────────────────────────────
+
+let parsedStudents = null;
+
+function parseCSV(text) {
+  // BOM 제거
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+
+  // 스트리밍 파서: 따옴표 안의 줄바꿈 포함 셀을 올바르게 처리
+  const rows = [];
+  let i = 0;
+  while (i < text.length) {
+    const row = [];
+    while (i < text.length) {
+      let field = '';
+      if (text[i] === '"') {
+        i++; // 여는 따옴표 건너뜀
+        while (i < text.length) {
+          if (text[i] === '"') {
+            if (text[i + 1] === '"') { field += '"'; i += 2; } // escaped quote
+            else { i++; break; } // 닫는 따옴표
+          } else {
+            field += text[i++];
+          }
+        }
+        // 따옴표 닫힌 후 쉼표/줄바꿈까지 공백 무시
+        while (i < text.length && text[i] !== ',' && text[i] !== '\r' && text[i] !== '\n') i++;
+      } else {
+        // 따옴표 없는 필드: 쉼표나 줄바꿈까지
+        while (i < text.length && text[i] !== ',' && text[i] !== '\r' && text[i] !== '\n') {
+          field += text[i++];
+        }
+      }
+      row.push(field.trim());
+      if (i < text.length && text[i] === ',') { i++; continue; }
+      break;
+    }
+    // 줄바꿈 건너뜀
+    if (i < text.length && text[i] === '\r') i++;
+    if (i < text.length && text[i] === '\n') i++;
+    if (row.some(f => f !== '')) rows.push(row);
+  }
+
+  if (rows.length < 2) throw new Error('데이터가 부족합니다. 헤더와 1행 이상의 데이터가 필요합니다.');
+
+  const headers = rows[0].map(h => h.trim());
+
+  const colMap = {
+    name:            findCol(headers, ['학생명','이름','name']),
+    grade:           findCol(headers, ['학년','grade']),
+    exam_schedule:   findCol(headers, ['시험 일정','시험일정','exam_schedule']),
+    exam_scope:      findCol(headers, ['시험범위','시험 범위','exam_scope']),
+    prep_status:     findCol(headers, ['시험대비 현황','시험대비현황','prep_status','대비현황']),
+    prev_score:      findCol(headers, ['이전점수','이전 점수','prev_score']),
+    target_score:    findCol(headers, ['목표점수','목표 점수','target_score']),
+    expected_result: findCol(headers, ['예상 결과','예상결과','expected_result'])
+  };
+
+  if (colMap.name < 0) throw new Error('"학생명" 컬럼을 찾을 수 없습니다.');
+  if (colMap.expected_result < 0) throw new Error('"예상 결과" 컬럼을 찾을 수 없습니다.');
+
+  const students = [];
+  for (let r = 1; r < rows.length; r++) {
+    const cols = rows[r];
+    const name = (cols[colMap.name] || '').trim();
+    if (!name) continue;
+    students.push({
+      name,
+      grade:           colMap.grade           >= 0 ? (cols[colMap.grade]           || '').trim() : '',
+      exam_schedule:   colMap.exam_schedule   >= 0 ? (cols[colMap.exam_schedule]   || '').trim() : '',
+      exam_scope:      colMap.exam_scope      >= 0 ? (cols[colMap.exam_scope]      || '').trim() : '',
+      prep_status:     colMap.prep_status     >= 0 ? (cols[colMap.prep_status]     || '').trim() : '',
+      prev_score:      colMap.prev_score      >= 0 ? (cols[colMap.prev_score]      || '').trim() : '',
+      target_score:    colMap.target_score    >= 0 ? (cols[colMap.target_score]    || '').trim() : '',
+      expected_result: colMap.expected_result >= 0 ? (cols[colMap.expected_result] || '').trim() : ''
+    });
+  }
+  if (students.length === 0) throw new Error('파싱된 학생 데이터가 없습니다.');
+  return students;
+}
+
+function findCol(headers, candidates) {
+  for (const c of candidates) {
+    const i = headers.findIndex(h => h === c);
+    if (i >= 0) return i;
+  }
+  return -1;
+}
+
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) readCSVFile(file);
+}
+function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function handleDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+function handleDrop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) readCSVFile(file);
+}
+
+function readCSVFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const students = parseCSV(e.target.result);
+      parsedStudents = students;
+      showCSVPreview(students);
+      document.getElementById('csvError').classList.add('hidden');
+      document.getElementById('loadCsvBtn').disabled = false;
+    } catch(err) {
+      document.getElementById('csvError').textContent = err.message;
+      document.getElementById('csvError').classList.remove('hidden');
+      document.getElementById('csvPreview').classList.add('hidden');
+      document.getElementById('loadCsvBtn').disabled = true;
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function showCSVPreview(students) {
+  const down = students.filter(s => s.expected_result.includes('하락')).length;
+  const mid  = students.filter(s => s.expected_result.includes('유지')).length;
+  const up   = students.filter(s => s.expected_result.includes('상승')).length;
+
+  document.getElementById('previewCount').textContent = students.length;
+  document.getElementById('previewDown').textContent = `하락 ${down}명`;
+  document.getElementById('previewMid').textContent = `유지 ${mid}명`;
+  document.getElementById('previewUp').textContent = `상승 ${up}명`;
+  document.getElementById('csvPreview').classList.remove('hidden');
+}
+
+function loadCsvData() {
+  if (!parsedStudents) return;
+  STUDENTS = parsedStudents;
+  selectedIndex = -1;
+  document.getElementById('emptyState').classList.add('hidden');
+  document.getElementById('studentDetail').classList.add('hidden');
+  document.getElementById('allResults').classList.add('hidden');
+  renderStudentList();
+  closeCsvModal();
+  document.getElementById('genAllBtn').disabled = false;
+  showToast(`${STUDENTS.length}명의 학생 데이터가 불러와졌습니다`);
+}
+
+function openCsvModal() {
+  parsedStudents = null;
+  document.getElementById('csvFileInput').value = '';
+  document.getElementById('csvPreview').classList.add('hidden');
+  document.getElementById('csvError').classList.add('hidden');
+  document.getElementById('loadCsvBtn').disabled = true;
+  document.getElementById('csvModal').classList.remove('hidden');
+}
+function closeCsvModal() { document.getElementById('csvModal').classList.add('hidden'); }
+
+// ── 메시지 생성 엔진 ─────────────────────────────
+
+function seededPick(arr, seed) {
+  if (!arr || arr.length === 0) return '';
+  const h = [...(seed||'x')].reduce((a, c) => Math.imul(31, a) + c.charCodeAt(0) | 0, 0);
+  return arr[Math.abs(h) % arr.length];
+}
+
+function applyVar(str, s) {
+  return (str || '').replace(/\{name\}/g, s.name).replace(/\{grade\}/g, s.grade);
+}
+
+function cleanScope(scope) {
+  if (!scope) return '';
+  const lines = scope.split(/[\n,]/).map(l => l.trim()).filter(l =>
+    l && !l.startsWith('목표') && !l.match(/^[가-힣]{0,2}[A-Z]\s*:/) && !l.match(/특강/)
+  );
+  return lines.slice(0, 2).join(', ') || scope.split('\n')[0].trim();
+}
+
+function getPrepDesc(prepStatus, type, s) {
+  const poolLines = RULES[type].prep || [];
+  const keyMap = { '개념 보충': '개념보충', '문제 풀이 위주': '문제풀이', '심화 문제 대비': '심화', '실전 모의 평가': '실전' };
+  const key = keyMap[prepStatus] || prepStatus;
+  const matching = poolLines.filter(l => l.startsWith(key + '|')).map(l => l.slice(l.indexOf('|')+1));
+  const pool = matching.length ? matching : poolLines.filter(l => !l.includes('|'));
+  return applyVar(seededPick(pool, s.name + prepStatus), s);
+}
+
+function generateMessage(s) {
+  if (s.expected_result.includes('하락')) return genDecline(s);
+  if (s.expected_result.includes('상승')) return genImprove(s);
+  return genMaintain(s);
+}
+
+function genDecline(s) {
+  const R = RULES.decline;
+  const greeting = applyVar(seededPick(R.greetings, s.name + 'g'), s);
+  const schedule = s.exam_schedule ? `${s.exam_schedule.replace(/\n/g,' ')} ` : '';
+  const scope = cleanScope(s.exam_scope);
+  const prep = getPrepDesc(s.prep_status, 'decline', s);
+  const reason = seededPick(R.reasons, s.name + 'r');
+  const positive = seededPick(R.positive, s.name + 'p');
+  const afterPlan = seededPick(R.afterplan, s.name + 'a');
+  const nextStrat = seededPick(R.nextstrat, s.name + 'n');
+  const closing = applyVar(seededPick(R.closings, s.name + 'c'), s);
+
+  let p1 = `${greeting}\n\n${schedule ? `다가오는 ${schedule}내신 시험을 앞두고 ` : ''}${s.name} 학생의 현재 학습 현황을 안내드립니다.\n\n${prep}.`;
+  if (scope) p1 += ` 이번 시험 범위는 ${scope} 단원으로, 해당 내용을 중심으로 수업을 진행하고 있습니다.`;
+
+  let p2 = '';
+  const hasPrev = s.prev_score.trim(), hasTarget = s.target_score.trim();
+  if (hasPrev && hasTarget) {
+    p2 = `\n\n이전 시험에서 ${s.prev_score.replace(/\n/g,' ')}의 결과를 기록하였으며, 이번 시험에서는 ${s.target_score}점을 목표로 준비하고 있습니다. 다만, 현재까지 확인된 학습 수준으로는 목표 점수까지 다소 보완이 필요한 상황입니다. ${reason}.`;
+  } else if (hasPrev) {
+    p2 = `\n\n이전 시험 결과(${s.prev_score.replace(/\n/g,' ')})와 비교하여 현재 학습 상태를 점검하고 있으며, 이번 시험에서 일부 단원에서 아쉬움이 남을 수 있는 상황입니다. ${reason}.`;
+  } else if (hasTarget) {
+    p2 = `\n\n이번 시험 목표는 ${s.target_score}점입니다. 현재까지 확인된 학습 수준으로는 목표 달성을 위해 다소 보완이 필요한 상황입니다. ${reason}.`;
+  } else {
+    p2 = `\n\n이번 시험에서는 일부 단원에서 아쉬움이 남을 수 있는 상황입니다. ${reason}.`;
+  }
+
+  const p3 = `\n\n이번 시험 결과와 별개로, ${positive}.`;
+  const p4 = `\n\n${afterPlan}. ${nextStrat}.\n\n${closing}`;
+
+  return p1 + p2 + p3 + p4;
+}
+
+function genMaintain(s) {
+  const R = RULES.maintain;
+  const greeting = applyVar(seededPick(R.greetings, s.name + 'g'), s);
+  const schedule = s.exam_schedule ? `${s.exam_schedule.replace(/\n/g,' ')} ` : '';
+  const scope = cleanScope(s.exam_scope);
+  const prep = getPrepDesc(s.prep_status, 'maintain', s);
+  const steady = seededPick(R.steady, s.name + 's');
+  const closing = applyVar(seededPick(R.closings, s.name + 'c'), s);
+
+  let p1 = `${greeting}\n\n${schedule ? `${schedule}내신 시험을 앞두고 ` : ''}${s.name} 학생의 현재 학습 현황을 안내드립니다.\n\n${prep}.`;
+  if (scope) p1 += ` 현재 ${scope} 단원을 중심으로 내실 있게 학습을 이어가고 있습니다.`;
+
+  const p2 = `\n\n${steady}.`;
+
+  const hasPrev = s.prev_score.trim(), hasTarget = s.target_score.trim();
+  let p3 = '';
+  if (hasPrev && hasTarget) {
+    p3 = `\n\n이전 시험에서 ${s.prev_score.replace(/\n/g,' ')}을(를) 기록하였으며, 이번 시험에서도 ${s.target_score}점 수준의 안정적인 결과를 목표로 준비하고 있습니다. 현재 학습 상태를 유지하며 시험까지 꾸준히 관리해 나가겠습니다.`;
+  } else if (hasTarget) {
+    p3 = `\n\n이번 시험 목표는 ${s.target_score}점으로, 현재 학습 진행 상황을 바탕으로 목표 달성이 가능한 수준으로 준비되고 있습니다.`;
+  } else if (hasPrev) {
+    p3 = `\n\n이전 시험(${s.prev_score.replace(/\n/g,' ')}) 수준을 유지·발전시킬 수 있도록 꾸준히 관리해 나가고 있습니다.`;
+  }
+
+  return p1 + p2 + p3 + `\n\n${closing}`;
+}
+
+function genImprove(s) {
+  const R = RULES.improve;
+  const greeting = applyVar(seededPick(R.greetings, s.name + 'g'), s);
+  const schedule = s.exam_schedule ? `${s.exam_schedule.replace(/\n/g,' ')} ` : '';
+  const scope = cleanScope(s.exam_scope);
+  const prep = getPrepDesc(s.prep_status, 'improve', s);
+  const effort = seededPick(R.effort, s.name + 'e');
+  const closing = applyVar(seededPick(R.closings, s.name + 'c'), s);
+
+  let p1 = `${greeting}\n\n${schedule ? `${schedule}내신 시험을 앞두고 ` : ''}${s.name} 학생의 최근 학습 현황을 기쁜 마음으로 안내드립니다.\n\n${prep}.`;
+  if (scope) p1 += ` ${scope} 단원을 중심으로 수업을 진행하고 있으며, 학습 완성도가 점차 높아지고 있습니다.`;
+
+  const hasPrev = s.prev_score.trim(), hasTarget = s.target_score.trim();
+  let p2 = '';
+  if (hasPrev && hasTarget) {
+    p2 = `\n\n이전 시험(${s.prev_score.replace(/\n/g,' ')})과 비교하여 현재 ${s.name} 학생의 실력이 눈에 띄게 향상되고 있습니다. 이번 시험에서는 ${s.target_score}점을 목표로 준비하고 있으며, 현재 학습 흐름상 충분히 도달 가능한 수준이라고 판단하고 있습니다.`;
+  } else if (hasPrev) {
+    p2 = `\n\n이전 시험(${s.prev_score.replace(/\n/g,' ')}) 이후 꾸준한 노력으로 이해도와 문제 풀이 속도 모두 향상되었습니다. 이번 시험에서 그 결과가 잘 반영될 것으로 기대하고 있습니다.`;
+  } else if (hasTarget) {
+    p2 = `\n\n이번 시험에서 ${s.target_score}점을 목표로 준비하고 있으며, 현재 학습 진행 상황을 보면 목표 달성에 충분히 도달할 수 있는 상태입니다.`;
+  }
+
+  const p3 = `\n\n${effort}.`;
+
+  return p1 + p2 + p3 + `\n\n${closing}`;
+}
+
+// ── UI 공통 ──────────────────────────────────────
+
+let STUDENTS = [];
+let selectedIndex = -1;
+let currentFilter = 'all';
+
+function getResultColor(result) {
+  if (result.includes('하락')) return { avatar: '#EF4444', badge: 'bg-red-50 text-red-500' };
+  if (result.includes('상승')) return { avatar: '#059669', badge: 'bg-emerald-50 text-emerald-600' };
+  return { avatar: '#D97706', badge: 'bg-amber-50 text-amber-600' };
+}
+function getResultLabel(r) {
+  if (r.includes('하락')) return '하락 예상';
+  if (r.includes('상승')) return '상승 예상';
+  return '유지 예상';
+}
+
+function renderStudentList() {
+  const list = document.getElementById('studentList');
+  const filtered = STUDENTS.filter(s => currentFilter === 'all' || s.expected_result.includes(currentFilter));
+
+  const down = STUDENTS.filter(s => s.expected_result.includes('하락')).length;
+  const mid  = STUDENTS.filter(s => s.expected_result.includes('유지')).length;
+  const up   = STUDENTS.filter(s => s.expected_result.includes('상승')).length;
+  document.getElementById('countDown').textContent = STUDENTS.length ? down : '-';
+  document.getElementById('countMid').textContent  = STUDENTS.length ? mid  : '-';
+  document.getElementById('countUp').textContent   = STUDENTS.length ? up   : '-';
+
+  if (!STUDENTS.length) {
+    document.getElementById('sidebarEmpty').classList.remove('hidden');
+    list.innerHTML = '';
+    list.appendChild(document.getElementById('sidebarEmpty'));
+    return;
+  }
+  document.getElementById('sidebarEmpty')?.classList.add('hidden');
+
+  list.innerHTML = filtered.map(s => {
+    const ri = STUDENTS.indexOf(s);
+    const color = getResultColor(s.expected_result);
+    const active = ri === selectedIndex;
+    return `<div class="sidebar-item mx-2 px-3 py-2.5 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${active ? 'active' : ''}" onclick="selectStudent(${ri})">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0" style="background-color:${color.avatar}">${s.name[0]}</div>
+          <div>
+            <div class="s-name text-sm ${active ? 'text-blue-600 font-semibold' : 'text-gray-800 font-medium'}">${s.name}</div>
+            <div class="text-xs text-gray-400">${s.grade}</div>
+          </div>
+        </div>
+        <span class="px-1.5 py-0.5 rounded-full text-xs font-medium ${color.badge}">${getResultLabel(s.expected_result)}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterStudents(type) {
+  currentFilter = type;
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    const a = btn.dataset.filter === type;
+    btn.className = `filter-btn flex-1 px-2 py-1 text-xs font-medium rounded-md transition-colors ${a ? 'bg-blue-50 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`;
+  });
+  renderStudentList();
+}
+
+function selectStudent(index) {
+  selectedIndex = index;
+  const s = STUDENTS[index];
+  const color = getResultColor(s.expected_result);
+  document.getElementById('emptyState').classList.add('hidden');
+  document.getElementById('allResults').classList.add('hidden');
+  document.getElementById('studentDetail').classList.remove('hidden');
+  document.getElementById('messageArea').classList.add('hidden');
+  document.getElementById('detailAvatar').style.backgroundColor = color.avatar;
+  document.getElementById('detailAvatar').textContent = s.name[0];
+  document.getElementById('detailName').textContent = s.name;
+  document.getElementById('detailGrade').textContent = s.grade;
+  const badge = document.getElementById('detailResultBadge');
+  badge.className = `px-2 py-0.5 rounded-full text-xs font-medium ${color.badge}`;
+  badge.textContent = getResultLabel(s.expected_result);
+  document.getElementById('detailSchedule').textContent = s.exam_schedule.replace(/\n/g,' ') || '미입력';
+  document.getElementById('detailPrep').textContent = s.prep_status || '미입력';
+  document.getElementById('detailPrevScore').textContent = s.prev_score.replace(/\n/g,' ') || '미입력';
+  document.getElementById('detailTargetScore').textContent = s.target_score || '미입력';
+  document.getElementById('detailScope').textContent = s.exam_scope.replace(/\n/g,' ') || '미입력';
+  renderStudentList();
+}
+
+function generateSingle() {
+  if (selectedIndex < 0) return;
+  const msg = generateMessage(STUDENTS[selectedIndex]);
+  document.getElementById('messageContent').textContent = msg;
+  document.getElementById('messageArea').classList.remove('hidden');
+  document.getElementById('messageArea').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function generateAll() {
+  const toGen = currentFilter === 'all' ? STUDENTS : STUDENTS.filter(s => s.expected_result.includes(currentFilter));
+  if (!toGen.length) return;
+  if (!confirm(`현재 필터된 학생 ${toGen.length}명의 멘트를 모두 생성할까요?`)) return;
+  document.getElementById('emptyState').classList.add('hidden');
+  document.getElementById('studentDetail').classList.add('hidden');
+  const allResults = document.getElementById('allResults');
+  allResults.classList.remove('hidden');
+  const results = toGen.map(s => ({ student: s, message: generateMessage(s) }));
+  allResults.innerHTML = `
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-base font-semibold text-gray-900">전체 생성 완료 <span class="text-gray-400 font-normal">(${results.length}명)</span></h2>
+      <button onclick="exportAll()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+        <iconify-icon icon="solar:export-bold-duotone" style="font-size:14px;"></iconify-icon>전체 복사
+      </button>
+    </div>
+    ${results.map(r => {
+      const color = getResultColor(r.student.expected_result);
+      return `<div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold" style="background-color:${color.avatar}">${r.student.name[0]}</div>
+            <span class="text-sm font-semibold text-gray-900">${r.student.name}</span>
+            <span class="text-xs text-gray-400">${r.student.grade}</span>
+            <span class="px-2 py-0.5 rounded-full text-xs font-medium ${color.badge}">${getResultLabel(r.student.expected_result)}</span>
+          </div>
+          <button onclick="copyEl(this)" data-msg="${r.message.replace(/"/g,'&quot;').replace(/\n/g,'&#10;')}"
+            class="flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+            <iconify-icon icon="solar:copy-bold-duotone" style="font-size:13px;"></iconify-icon>복사
+          </button>
+        </div>
+        <div class="message-box text-sm text-gray-700 leading-relaxed bg-gray-50 rounded-xl p-4 border border-gray-100">${r.message.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+      </div>`;
+    }).join('')}`;
+  window._allMsgs = results;
+}
+
+function copyEl(btn) {
+  const text = btn.getAttribute('data-msg').replace(/&quot;/g,'"').replace(/&#10;/g,'\n');
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.innerHTML;
+    btn.textContent = '복사됨';
+    setTimeout(() => btn.innerHTML = orig, 1500);
+  });
+}
+function copyMessage() {
+  const text = document.getElementById('messageContent').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = event.target.closest('button');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<iconify-icon icon="solar:check-circle-bold-duotone" style="font-size:14px;"></iconify-icon> 복사됨';
+    setTimeout(() => btn.innerHTML = orig, 1500);
+  });
+}
+function exportAll() {
+  if (!window._allMsgs) return;
+  const text = window._allMsgs.map(r =>
+    `=== ${r.student.name} (${r.student.grade}) - ${r.student.expected_result} ===\n\n${r.message}`
+  ).join('\n\n' + '─'.repeat(40) + '\n\n');
+  navigator.clipboard.writeText(text).then(() => showToast(`${window._allMsgs.length}명 전체 멘트가 복사되었습니다`));
+}
+
+// ── 샘플 데이터 ──────────────────────────────────
+
+function loadSampleData() {
+  const sampleCSV = `학생명,학년,시험 일정,시험범위,시험대비 현황,이전점수,목표점수,예상 결과
+강민지,고2,7월 1주차(6/29~7/3),삼각함수 활용~끝,개념 보충,,,성적 하락(부정)
+강한음,고2,6월 4-5주차(6/24-6/30),삼각함수 활용-끝,문제 풀이 위주,70,85,성적 유지(보통)
+강희,고1,7월 1주차(6/29~7/3),여러가지방정식~행렬,심화 문제 대비,70.1,75이상,성적 상승(긍정)
+김소와,고2,6/29 ~ 7/3,대수(천재전): 삼각함수의 그래프 ~,심화 문제 대비,71,80,성적 상승(긍정)
+박경주,고2,7월 1주차(7/1~7/7),수열단원만(3단원),실전 모의 평가,87,90,성적 유지(보통)
+이형직,고3,7월 1주차(6/29~7/3),미적분: 접선의 방정식,실전 모의 평가,64.4,80,성적 상승(긍정)
+팽준석,고2,6/29 ~ 7/3,대수(천재전): 삼각함수 활용 ~,문제 풀이 위주,86점 2등급,100,성적 하락(부정)`;
+  try {
+    STUDENTS = parseCSV(sampleCSV);
+    selectedIndex = -1;
+    renderStudentList();
+    document.getElementById('genAllBtn').disabled = false;
+    showToast(`샘플 데이터 ${STUDENTS.length}명이 불러와졌습니다`);
+  } catch(e) {}
+}
+
+// ── 토스트 알림 ──────────────────────────────────
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-sm px-4 py-2.5 rounded-xl shadow-lg z-[100] transition-opacity';
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 2200);
+}
+
+// ── 초기화 ─────────────────────────────────────
+
+window.onload = () => {
+  loadRules();
+  renderStudentList();
+};
+</script>
+</body>
+</html>
