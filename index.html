@@ -53,6 +53,25 @@ tailwind.config = {
           <iconify-icon icon="solar:settings-bold-duotone" style="font-size:16px;"></iconify-icon>
         </button>
       </div>
+
+      <!-- 로그인 사용자 표시 -->
+      <div class="flex items-center justify-between mb-3 bg-gray-50 rounded-lg px-2.5 py-1.5">
+        <div class="flex items-center gap-1.5 min-w-0">
+          <iconify-icon icon="solar:user-circle-bold-duotone" class="text-blue-500 shrink-0" style="font-size:16px;"></iconify-icon>
+          <span class="text-xs font-medium text-gray-700 truncate" id="currentUserLabel">-</span>
+        </div>
+        <div class="flex items-center gap-0.5 shrink-0">
+          <button onclick="refreshStudentDB()" title="학생 DB 새로고침"
+            class="w-6 h-6 flex items-center justify-center rounded-md text-gray-400 hover:text-blue-600 hover:bg-white transition-colors">
+            <iconify-icon icon="solar:refresh-bold-duotone" style="font-size:14px;"></iconify-icon>
+          </button>
+          <button onclick="logout()" title="사용자 변경"
+            class="w-6 h-6 flex items-center justify-center rounded-md text-gray-400 hover:text-gray-600 hover:bg-white transition-colors">
+            <iconify-icon icon="solar:logout-2-bold-duotone" style="font-size:14px;"></iconify-icon>
+          </button>
+        </div>
+      </div>
+
       <div class="flex gap-1">
         <button onclick="filterStudents('all')" data-filter="all" class="filter-btn flex-1 px-2 py-1 text-xs font-medium rounded-md bg-blue-50 text-blue-600 transition-colors">전체</button>
         <button onclick="filterStudents('하락')" data-filter="하락" class="filter-btn flex-1 px-2 py-1 text-xs font-medium rounded-md text-gray-500 hover:text-gray-700 transition-colors">하락</button>
@@ -162,6 +181,33 @@ tailwind.config = {
       </div>
     </div>
   </main>
+</div>
+
+<!-- ══════════════════════════════════════
+     로그인 모달 (이름 입력 = 본인 학생 필터)
+══════════════════════════════════════ -->
+<div id="loginModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center modal-overlay bg-black/40">
+  <div class="bg-white rounded-2xl shadow-lg w-full max-w-sm mx-4 overflow-hidden">
+    <div class="px-6 pt-7 pb-2 text-center">
+      <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
+        <iconify-icon icon="solar:user-circle-bold-duotone" class="text-blue-500" style="font-size:30px;"></iconify-icon>
+      </div>
+      <h2 class="text-base font-semibold text-gray-900">선생님 이름을 입력하세요</h2>
+      <p class="text-xs text-gray-400 mt-1 leading-relaxed">입력한 이름과 일치하는<br>담당 학생만 표시됩니다</p>
+    </div>
+    <div class="px-6 py-4">
+      <input type="text" id="loginNameInput" placeholder="예: 홍길동" autocomplete="off"
+        onkeydown="if(event.key==='Enter')doLogin()"
+        class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-center" />
+      <div id="loginError" class="hidden text-xs text-red-500 mt-2 text-center"></div>
+    </div>
+    <div class="px-6 pb-6">
+      <button onclick="doLogin()"
+        class="w-full px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors">
+        시작하기
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- ══════════════════════════════════════
@@ -362,6 +408,11 @@ tailwind.config = {
      스크립트
 ══════════════════════════════════════ -->
 <script>
+
+// ── 연동 설정 (코다 ↔ n8n) ──────────────────────────
+const WEBHOOK_DB      = 'https://ontact.app.n8n.cloud/webhook/studentDB';   // GET: 학생 DB 불러오기
+const WEBHOOK_SAVE    = 'https://ontact.app.n8n.cloud/webhook/save-report'; // POST: 작성기록 업로드
+const WEBHOOK_RECORDS = 'https://ontact.app.n8n.cloud/webhook/get-records'; // GET: 작성기록 불러오기
 
 // ── 기본 규칙 정의 ──────────────────────────────────
 
@@ -612,6 +663,7 @@ function parseCSV(text) {
   const headers = rows[0].map(h => h.trim());
 
   const colMap = {
+    owner:           findCol(headers, ['정규T','담당자','담당 선생님','담당선생님','선생님','teacher']),
     name:            findCol(headers, ['학생명','이름','name']),
     grade:           findCol(headers, ['학년','grade']),
     exam_schedule:   findCol(headers, ['시험 일정','시험일정','exam_schedule']),
@@ -632,6 +684,7 @@ function parseCSV(text) {
     if (!name) continue;
     students.push({
       name,
+      owner:           colMap.owner           >= 0 ? (cols[colMap.owner]           || '').trim() : '',
       grade:           colMap.grade           >= 0 ? (cols[colMap.grade]           || '').trim() : '',
       exam_schedule:   colMap.exam_schedule   >= 0 ? (cols[colMap.exam_schedule]   || '').trim() : '',
       exam_scope:      colMap.exam_scope      >= 0 ? (cols[colMap.exam_scope]      || '').trim() : '',
@@ -699,15 +752,14 @@ function showCSVPreview(students) {
 
 function loadCsvData() {
   if (!parsedStudents) return;
-  STUDENTS = parsedStudents;
-  selectedIndex = -1;
-  document.getElementById('emptyState').classList.add('hidden');
-  document.getElementById('studentDetail').classList.add('hidden');
-  document.getElementById('allResults').classList.add('hidden');
-  renderStudentList();
+  ALL_STUDENTS = parsedStudents;
+  localStorage.setItem('mentCachedDB', JSON.stringify(ALL_STUDENTS));
+  activateStudents();
   closeCsvModal();
-  document.getElementById('genAllBtn').disabled = false;
-  showToast(`${STUDENTS.length}명의 학생 데이터가 불러와졌습니다`);
+  const hasOwner = ALL_STUDENTS.some(s => (s.owner || '').trim());
+  showToast(hasOwner
+    ? `담당 학생 ${STUDENTS.length}명 (전체 ${ALL_STUDENTS.length}명)을 불러왔습니다`
+    : `${STUDENTS.length}명의 학생 데이터가 불러와졌습니다`);
 }
 
 function openCsvModal() {
@@ -844,9 +896,200 @@ function genImprove(s) {
 
 // ── UI 공통 ──────────────────────────────────────
 
-let STUDENTS = [];
+let ALL_STUDENTS = [];   // DB/CSV 전체 (담당자 필터 전)
+let STUDENTS = [];        // 로그인 사용자의 담당 학생만
 let selectedIndex = -1;
 let currentFilter = 'all';
+let currentUser = '';     // 로그인한 선생님 이름
+
+// ── 로그인 (이름 입력 = 본인 학생 필터) ──────────────
+
+function showLogin() {
+  document.getElementById('loginModal').classList.remove('hidden');
+  document.getElementById('loginError').classList.add('hidden');
+  const inp = document.getElementById('loginNameInput');
+  inp.value = '';
+  setTimeout(() => inp.focus(), 50);
+}
+
+function doLogin() {
+  const name = document.getElementById('loginNameInput').value.trim();
+  if (!name) {
+    const err = document.getElementById('loginError');
+    err.textContent = '이름을 입력해주세요';
+    err.classList.remove('hidden');
+    return;
+  }
+  currentUser = name;
+  localStorage.setItem('mentCurrentUser', name);
+  document.getElementById('loginModal').classList.add('hidden');
+  document.getElementById('currentUserLabel').textContent = name + ' 선생님';
+  loadRecords();
+  loadServerRecords();    // 서버(코다)의 작성기록 병합 복원
+  loadCachedDB();         // 캐시 즉시 표시
+  refreshStudentDB();     // 서버에서 최신 DB 동기화
+}
+
+function logout() {
+  localStorage.removeItem('mentCurrentUser');
+  currentUser = '';
+  ALL_STUDENTS = [];
+  STUDENTS = [];
+  selectedIndex = -1;
+  document.getElementById('currentUserLabel').textContent = '-';
+  document.getElementById('emptyState').classList.remove('hidden');
+  document.getElementById('studentDetail').classList.add('hidden');
+  document.getElementById('allResults').classList.add('hidden');
+  document.getElementById('genAllBtn').disabled = true;
+  renderStudentList();
+  showLogin();
+}
+
+// ── 학생 DB 불러오기 (코다 ← n8n) ────────────────────
+
+function applyUserFilter() {
+  // 담당자 정보가 하나라도 있으면 본인 학생만, 전혀 없으면 전체 표시
+  const hasOwner = ALL_STUDENTS.some(s => (s.owner || '').trim());
+  STUDENTS = hasOwner
+    ? ALL_STUDENTS.filter(s => (s.owner || '').trim() === currentUser)
+    : ALL_STUDENTS.slice();
+}
+
+function activateStudents() {
+  applyUserFilter();
+  selectedIndex = -1;
+  document.getElementById('studentDetail').classList.add('hidden');
+  document.getElementById('allResults').classList.add('hidden');
+  document.getElementById('emptyState').classList.toggle('hidden', STUDENTS.length > 0);
+  document.getElementById('genAllBtn').disabled = STUDENTS.length === 0;
+  renderStudentList();
+}
+
+function normalizeStudent(raw) {
+  const g = (...keys) => {
+    for (const k of keys) {
+      if (raw[k] != null && String(raw[k]).trim() !== '') return String(raw[k]).trim();
+    }
+    return '';
+  };
+  return {
+    name:            g('학생명','이름','name'),
+    owner:           g('정규T','담당자','담당 선생님','담당선생님','선생님','teacher'),
+    grade:           g('학년','grade'),
+    exam_schedule:   g('시험 일정','시험일정','exam_schedule'),
+    exam_scope:      g('시험범위','시험 범위','exam_scope'),
+    prep_status:     g('시험대비 현황','시험대비현황','대비현황','prep_status'),
+    prev_score:      g('이전점수','이전 점수','prev_score'),
+    target_score:    g('목표점수','목표 점수','target_score'),
+    expected_result: g('예상 결과','예상결과','expected_result')
+  };
+}
+
+async function refreshStudentDB() {
+  if (!currentUser) return;
+  showToast('학생 DB를 불러오는 중...');
+  try {
+    const res = await fetch(`${WEBHOOK_DB}?선생님=${encodeURIComponent(currentUser)}`, { method: 'GET' });
+    if (!res.ok) throw new Error('서버 응답 오류 ' + res.status);
+    let data = await res.json();
+    if (!Array.isArray(data)) data = data.students || data.data || [];
+    const students = data.map(normalizeStudent).filter(s => s.name);
+    if (!students.length) throw new Error('빈 데이터');
+    ALL_STUDENTS = students;
+    localStorage.setItem('mentCachedDB', JSON.stringify(students));
+    activateStudents();
+    showToast(`담당 학생 ${STUDENTS.length}명을 불러왔습니다`);
+  } catch (err) {
+    showToast('DB 불러오기 실패 — 캐시/CSV로 이용하세요');
+  }
+}
+
+function loadCachedDB() {
+  try {
+    const cached = JSON.parse(localStorage.getItem('mentCachedDB') || '[]');
+    if (Array.isArray(cached) && cached.length) {
+      ALL_STUDENTS = cached;
+      activateStudents();
+    }
+  } catch (e) {}
+}
+
+// ── 작성기록 저장/복원 (학생별 최신 멘트 + 발송여부) ──
+
+let RECORDS = {};  // { 학생명: { message, sent, updatedAt } }
+
+function recordsKey() { return 'mentRecords::' + currentUser; }
+
+function loadRecords() {
+  try { RECORDS = JSON.parse(localStorage.getItem(recordsKey()) || '{}'); }
+  catch (e) { RECORDS = {}; }
+}
+
+function persistRecords() {
+  localStorage.setItem(recordsKey(), JSON.stringify(RECORDS));
+}
+
+function getRecord(name) { return RECORDS[name] || null; }
+
+function saveRecord(name, fields) {
+  const prev = RECORDS[name] || { message: '', sent: false };
+  RECORDS[name] = {
+    message: fields.message != null ? fields.message : prev.message,
+    sent:    fields.sent    != null ? fields.sent    : prev.sent,
+    updatedAt: new Date().toISOString()
+  };
+  persistRecords();
+  pushRecord(name);
+}
+
+// 코다로 업로드 (n8n → POST)
+async function pushRecord(name) {
+  const rec = RECORDS[name];
+  if (!rec) return;
+  try {
+    await fetch(WEBHOOK_SAVE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        선생님: currentUser,
+        학생명: name,
+        멘트: rec.message,
+        발송여부: !!rec.sent
+      })
+    });
+  } catch (e) { /* 오프라인이어도 로컬엔 저장됨 */ }
+}
+
+function toggleSent(name, checked) {
+  saveRecord(name, { sent: checked });
+}
+
+// 서버(코다)에서 작성기록 불러와 localStorage와 병합 (서버가 최신이면 덮어씀)
+async function loadServerRecords() {
+  if (!currentUser) return;
+  try {
+    const res = await fetch(`${WEBHOOK_RECORDS}?선생님=${encodeURIComponent(currentUser)}`);
+    const serverRecords = await res.json();
+    if (!serverRecords || typeof serverRecords !== 'object') return;
+    for (const [name, rec] of Object.entries(serverRecords)) {
+      if (!rec || typeof rec !== 'object') continue;
+      const local = RECORDS[name];
+      if (!local || !local.updatedAt || (rec.updatedAt && rec.updatedAt > local.updatedAt)) {
+        RECORDS[name] = rec;
+      }
+    }
+    persistRecords();
+    renderStudentList();
+    if (selectedIndex >= 0) {
+      const cur = STUDENTS[selectedIndex];
+      const r = cur && getRecord(cur.name);
+      if (r && r.message) {
+        document.getElementById('messageContent').textContent = r.message;
+        document.getElementById('messageArea').classList.remove('hidden');
+      }
+    }
+  } catch (e) { /* 서버 불가 시 localStorage 기록 그대로 사용 */ }
+}
 
 function getResultColor(result) {
   if (result.includes('하락')) return { avatar: '#EF4444', badge: 'bg-red-50 text-red-500' };
@@ -870,27 +1113,36 @@ function renderStudentList() {
   document.getElementById('countMid').textContent  = STUDENTS.length ? mid  : '-';
   document.getElementById('countUp').textContent   = STUDENTS.length ? up   : '-';
 
+  const empty = document.getElementById('sidebarEmpty');
   if (!STUDENTS.length) {
-    document.getElementById('sidebarEmpty').classList.remove('hidden');
     list.innerHTML = '';
-    list.appendChild(document.getElementById('sidebarEmpty'));
+    if (empty) { list.appendChild(empty); empty.classList.remove('hidden'); }
     return;
   }
-  document.getElementById('sidebarEmpty')?.classList.add('hidden');
+  if (empty) empty.classList.add('hidden');
 
   list.innerHTML = filtered.map(s => {
     const ri = STUDENTS.indexOf(s);
     const color = getResultColor(s.expected_result);
     const active = ri === selectedIndex;
+    const rec = getRecord(s.name);
+    const sent = rec && rec.sent;
+    const hasMsg = rec && rec.message;
+    const safeName = s.name.replace(/'/g, "\\'");
     return `<div class="sidebar-item mx-2 px-3 py-2.5 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${active ? 'active' : ''}" onclick="selectStudent(${ri})">
       <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2.5">
-          <div>
-            <div class="s-name text-sm ${active ? 'text-blue-600 font-semibold' : 'text-gray-800 font-medium'}">${s.name}</div>
-            <div class="text-xs text-gray-400">${s.grade}</div>
+        <div class="flex items-center gap-2.5 min-w-0">
+          <input type="checkbox" ${sent ? 'checked' : ''} title="발송 완료 체크"
+            onclick="event.stopPropagation(); toggleSent('${safeName}', this.checked); renderStudentList();"
+            class="w-4 h-4 shrink-0 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+          <div class="min-w-0">
+            <div class="s-name text-sm truncate ${sent ? 'line-through text-gray-400' : (active ? 'text-blue-600 font-semibold' : 'text-gray-800 font-medium')}">${s.name}</div>
+            <div class="text-xs text-gray-400 flex items-center gap-1">
+              ${s.grade}${hasMsg ? '<iconify-icon icon="solar:document-text-bold-duotone" class="text-blue-400" style="font-size:11px;" title="작성기록 있음"></iconify-icon>' : ''}
+            </div>
           </div>
         </div>
-        <span class="px-1.5 py-0.5 rounded-full text-xs font-medium ${color.badge}">${getResultLabel(s.expected_result)}</span>
+        <span class="px-1.5 py-0.5 rounded-full text-xs font-medium shrink-0 ${color.badge}">${getResultLabel(s.expected_result)}</span>
       </div>
     </div>`;
   }).join('');
@@ -925,15 +1177,25 @@ function selectStudent(index) {
   document.getElementById('detailPrevScore').textContent = s.prev_score.replace(/\n/g,' ') || '미입력';
   document.getElementById('detailTargetScore').textContent = s.target_score || '미입력';
   document.getElementById('detailScope').textContent = s.exam_scope.replace(/\n/g,' ') || '미입력';
+
+  // 이전 작성기록(최신 멘트) 복원
+  const rec = getRecord(s.name);
+  if (rec && rec.message) {
+    document.getElementById('messageContent').textContent = rec.message;
+    document.getElementById('messageArea').classList.remove('hidden');
+  }
   renderStudentList();
 }
 
 function generateSingle() {
   if (selectedIndex < 0) return;
-  const msg = generateMessage(STUDENTS[selectedIndex]);
+  const s = STUDENTS[selectedIndex];
+  const msg = generateMessage(s);
   document.getElementById('messageContent').textContent = msg;
   document.getElementById('messageArea').classList.remove('hidden');
   document.getElementById('messageArea').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  saveRecord(s.name, { message: msg });  // 학생별 최신 멘트 저장 + 업로드
+  renderStudentList();
 }
 
 function generateAll() {
@@ -945,6 +1207,7 @@ function generateAll() {
   const allResults = document.getElementById('allResults');
   allResults.classList.remove('hidden');
   const results = toGen.map(s => ({ student: s, message: generateMessage(s) }));
+  results.forEach(r => saveRecord(r.student.name, { message: r.message }));  // 일괄 저장 + 업로드
   allResults.innerHTML = `
     <div class="flex items-center justify-between mb-2">
       <h2 class="text-base font-semibold text-gray-900">전체 생성 완료 <span class="text-gray-400 font-normal">(${results.length}명)</span></h2>
@@ -971,6 +1234,7 @@ function generateAll() {
       </div>`;
     }).join('')}`;
   window._allMsgs = results;
+  renderStudentList();
 }
 
 function copyEl(btn) {
@@ -1010,10 +1274,11 @@ function loadSampleData() {
 이형직,고3,7월 1주차(6/29~7/3),미적분: 접선의 방정식,실전 모의 평가,64.4,80,성적 상승(긍정)
 팽준석,고2,6/29 ~ 7/3,대수(천재전): 삼각함수 활용 ~,문제 풀이 위주,86점 2등급,100,성적 하락(부정)`;
   try {
-    STUDENTS = parseCSV(sampleCSV);
-    selectedIndex = -1;
-    renderStudentList();
-    document.getElementById('genAllBtn').disabled = false;
+    ALL_STUDENTS = parseCSV(sampleCSV);
+    // 샘플엔 담당자 컬럼이 없으므로 현재 사용자 담당으로 지정해 표시
+    ALL_STUDENTS.forEach(s => { if (!s.owner) s.owner = currentUser; });
+    localStorage.setItem('mentCachedDB', JSON.stringify(ALL_STUDENTS));
+    activateStudents();
     showToast(`샘플 데이터 ${STUDENTS.length}명이 불러와졌습니다`);
   } catch(e) {}
 }
@@ -1033,6 +1298,18 @@ function showToast(msg) {
 window.onload = () => {
   loadRules();
   renderStudentList();
+
+  const savedUser = localStorage.getItem('mentCurrentUser');
+  if (savedUser) {
+    currentUser = savedUser;
+    document.getElementById('currentUserLabel').textContent = savedUser + ' 선생님';
+    loadRecords();      // 작성기록 복원 (localStorage)
+    loadServerRecords();// 서버(코다)의 작성기록 병합 복원
+    loadCachedDB();     // 캐시된 DB 즉시 표시 → 새로고침/재접속에도 유지
+    refreshStudentDB(); // 서버 최신 DB 동기화
+  } else {
+    showLogin();
+  }
 };
 </script>
 </body>
