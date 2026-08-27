@@ -2,1315 +2,669 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>내신 전 학부모 안내 멘트 생성기</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css">
-<script src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
-<script>
-tailwind.config = {
-  theme: {
-    extend: {
-      fontFamily: { sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'] },
-      colors: { accent: { DEFAULT: '#2563EB', light: '#EFF6FF', dark: '#1D4ED8' } }
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>밀당PT 특강 멘트 생성기</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=Hahmlet:wght@600;700&display=swap">
+<style>
+  :root{
+    --bg:#F5F7F4; --surface:#FFFFFF; --surface2:#EDF1EE;
+    --ink:#1E2B26; --muted:#64736C; --line:#DCE3DE;
+    --accent:#146B52; --on-accent:#FFFFFF; --accent-soft:#E3F0EA; --accent-line:#B9D4C8;
+    --danger:#9C4221;
+    --shadow:0 1px 2px rgba(30,43,38,.06), 0 4px 16px rgba(30,43,38,.05);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#131A16; --surface:#1B2420; --surface2:#212B26;
+      --ink:#E9EEEB; --muted:#93A29A; --line:#2B352F;
+      --accent:#43C29A; --on-accent:#0A1712; --accent-soft:#1D3229; --accent-line:#2F5546;
+      --danger:#E08A5E;
+      --shadow:0 1px 2px rgba(0,0,0,.35), 0 4px 16px rgba(0,0,0,.25);
     }
   }
-}
-</script>
-<style>
-  * { word-break: keep-all; }
-  .message-box { white-space: pre-wrap; }
-  .sidebar-item.active { background-color: #EFF6FF; }
-  .sidebar-item.active .s-name { color: #2563EB; font-weight: 600; }
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 2px; }
-  .modal-overlay { backdrop-filter: blur(4px); }
-  .rule-textarea { resize: vertical; min-height: 80px; font-size: 13px; line-height: 1.7; }
-  .tab-active { background: #EFF6FF; color: #2563EB; font-weight: 600; }
-  .tab-inactive { color: #6B7280; }
-  .tab-inactive:hover { color: #374151; background: #F9FAFB; }
-  .drop-zone.drag-over { border-color: #2563EB; background: #EFF6FF; }
+  :root[data-theme="dark"]{
+    --bg:#131A16; --surface:#1B2420; --surface2:#212B26;
+    --ink:#E9EEEB; --muted:#93A29A; --line:#2B352F;
+    --accent:#43C29A; --on-accent:#0A1712; --accent-soft:#1D3229; --accent-line:#2F5546;
+    --danger:#E08A5E;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 4px 16px rgba(0,0,0,.25);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size:14px; line-height:1.55; word-break:keep-all;
+  }
+  header.app{
+    display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;
+    padding:20px 24px 0;
+    max-width:1400px; margin:0 auto;
+  }
+  header.app h1{
+    font-family:"Hahmlet", "IBM Plex Sans KR", serif;
+    font-size:21px; font-weight:700; margin:0; letter-spacing:-.01em;
+  }
+  header.app .sub{color:var(--muted); font-size:13px}
+  .wrap{
+    max-width:1400px; margin:0 auto; padding:16px 24px 40px;
+    display:grid; grid-template-columns:330px 300px 1fr; gap:16px; align-items:start;
+  }
+  @media (max-width:1080px){ .wrap{grid-template-columns:320px 1fr} .col-preview{grid-column:1 / -1} }
+  @media (max-width:720px){ .wrap{grid-template-columns:1fr} .col-preview{grid-column:auto} }
+
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow)}
+  .card + .card{margin-top:16px}
+  .card .hd{padding:12px 16px 0; font-weight:700; font-size:13px; letter-spacing:.04em; color:var(--muted)}
+  .card .bd{padding:12px 16px 16px}
+
+  label.f{display:block; margin-bottom:12px}
+  label.f .lab, .lab{display:block; font-size:12px; font-weight:500; color:var(--muted); margin-bottom:5px}
+  input[type=text], select, textarea{
+    width:100%; font:inherit; color:var(--ink);
+    background:var(--surface2); border:1px solid var(--line); border-radius:7px;
+    padding:8px 10px;
+  }
+  textarea{resize:vertical; min-height:110px; line-height:1.7}
+  input:focus, select:focus, textarea:focus, button:focus-visible{
+    outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent);
+  }
+  .seg{display:flex; gap:0; border:1px solid var(--line); border-radius:7px; overflow:hidden}
+  .seg button{
+    flex:1; font:inherit; padding:7px 4px; border:none; background:var(--surface2); color:var(--muted); cursor:pointer;
+  }
+  .seg button + button{border-left:1px solid var(--line)}
+  .seg button.on{background:var(--accent); color:var(--on-accent); font-weight:700}
+  .hint{font-size:12px; color:var(--muted); margin:4px 0 0}
+  .btn{
+    font:inherit; cursor:pointer; border-radius:7px; padding:8px 14px;
+    border:1px solid var(--line); background:var(--surface2); color:var(--ink);
+  }
+  .btn.primary{background:var(--accent); border-color:var(--accent); color:var(--on-accent); font-weight:700}
+  .btn.small{padding:4px 10px; font-size:12px}
+  .btn:disabled{opacity:.45; cursor:default}
+
+  /* roster */
+  .roster-head{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:12px 16px 8px}
+  .roster-head b{font-variant-numeric:tabular-nums}
+  .roster{max-height:520px; overflow-y:auto; border-top:1px solid var(--line)}
+  .stu{
+    display:flex; align-items:center; gap:8px; padding:8px 12px 8px 14px;
+    border-bottom:1px solid var(--line); cursor:pointer;
+  }
+  .stu:last-child{border-bottom:none}
+  .stu:hover{background:var(--surface2)}
+  .stu.sel{background:var(--accent-soft); box-shadow:inset 3px 0 0 var(--accent)}
+  .stu .nm{flex:1; font-weight:500; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .stu .nm .done{color:var(--accent); font-weight:700; margin-right:4px}
+  .chip{
+    font:inherit; font-size:11px; padding:2px 8px; border-radius:999px; cursor:pointer;
+    border:1px solid var(--accent-line); background:var(--surface); color:var(--accent); white-space:nowrap;
+  }
+  .chip.basic{border-color:var(--line); color:var(--muted)}
+  .empty{padding:24px 16px; color:var(--muted); text-align:center; font-size:13px}
+
+  /* preview */
+  .pv-head{display:flex; align-items:center; gap:10px; padding:12px 16px; border-bottom:1px solid var(--line); flex-wrap:wrap}
+  .pv-head .who{font-family:"Hahmlet", serif; font-weight:700; font-size:16px}
+  .pv-tags{display:flex; gap:6px; flex-wrap:wrap; font-size:11px; color:var(--muted)}
+  .pv-tags span{border:1px solid var(--line); border-radius:999px; padding:1px 8px; background:var(--surface2)}
+  .pv-body{padding:16px}
+  pre.msg{
+    margin:0; font:inherit; white-space:pre-wrap; overflow-wrap:anywhere;
+    background:var(--surface2); border:1px solid var(--line); border-radius:8px;
+    padding:16px 18px; max-height:560px; overflow-y:auto; line-height:1.75; font-size:13.5px;
+  }
+  .pv-actions{display:flex; gap:8px; margin-left:auto}
+  .toast{
+    position:fixed; left:50%; bottom:28px; transform:translateX(-50%) translateY(8px);
+    background:var(--ink); color:var(--bg); padding:9px 18px; border-radius:999px;
+    font-size:13px; opacity:0; pointer-events:none; transition:opacity .18s, transform .18s;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+  @media (prefers-reduced-motion: reduce){ .toast{transition:none} }
 </style>
 </head>
-<body class="bg-gray-50 font-sans">
+<body>
+<header class="app">
+  <h1>특강 멘트 생성기</h1>
+  <span class="sub">2026 수학 2학기 중간고사 대비 · 학부모 안내 메시지</span>
+</header>
 
-<!-- ── 레이아웃 ── -->
-<div class="flex" style="height:100vh;">
+<div class="wrap">
 
-  <!-- 사이드바 -->
-  <aside class="w-64 shrink-0 bg-white border-r border-gray-100 flex flex-col" style="height:100vh;">
-    <div class="px-4 py-4 border-b border-gray-100">
-      <div class="flex items-center justify-between mb-3">
-        <div class="flex items-center gap-2">
-          <div class="w-7 h-7 bg-blue-50 rounded-lg flex items-center justify-center">
-            <iconify-icon icon="solar:document-text-bold-duotone" class="text-blue-600" style="font-size:16px;"></iconify-icon>
-          </div>
-          <span class="text-sm font-semibold text-gray-900">내신 멘트 생성기</span>
+  <!-- ══════════ 설정 ══════════ -->
+  <div class="col-set">
+    <div class="card">
+      <div class="hd">기본 설정</div>
+      <div class="bd">
+        <label class="f">
+          <span class="lab">선생님 이름</span>
+          <input type="text" id="teacher" placeholder="예: 김민지" autocomplete="off">
+        </label>
+        <div class="f">
+          <span class="lab">학년</span>
+          <div class="seg" id="segGrade" role="group" aria-label="학년"></div>
         </div>
-        <button onclick="openSettings()" title="작성 규칙 설정"
-          class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
-          <iconify-icon icon="solar:settings-bold-duotone" style="font-size:16px;"></iconify-icon>
-        </button>
-      </div>
-
-      <!-- 로그인 사용자 표시 -->
-      <div class="flex items-center justify-between mb-3 bg-gray-50 rounded-lg px-2.5 py-1.5">
-        <div class="flex items-center gap-1.5 min-w-0">
-          <iconify-icon icon="solar:user-circle-bold-duotone" class="text-blue-500 shrink-0" style="font-size:16px;"></iconify-icon>
-          <span class="text-xs font-medium text-gray-700 truncate" id="currentUserLabel">-</span>
+        <label class="f">
+          <span class="lab">시험범위</span>
+          <select id="selRange"></select>
+          <p class="hint">학교 시험 공지에 맞는 범위를 선택하세요.</p>
+        </label>
+        <div class="f">
+          <span class="lab">기본 수준 (학생별로 개별 변경 가능)</span>
+          <div class="seg" id="segLevel" role="group" aria-label="수준"></div>
         </div>
-        <div class="flex items-center gap-0.5 shrink-0">
-          <button onclick="refreshStudentDB()" title="학생 DB 새로고침"
-            class="w-6 h-6 flex items-center justify-center rounded-md text-gray-400 hover:text-blue-600 hover:bg-white transition-colors">
-            <iconify-icon icon="solar:refresh-bold-duotone" style="font-size:14px;"></iconify-icon>
-          </button>
-          <button onclick="logout()" title="사용자 변경"
-            class="w-6 h-6 flex items-center justify-center rounded-md text-gray-400 hover:text-gray-600 hover:bg-white transition-colors">
-            <iconify-icon icon="solar:logout-2-bold-duotone" style="font-size:14px;"></iconify-icon>
-          </button>
-        </div>
-      </div>
-
-      <div class="flex gap-1">
-        <button onclick="filterStudents('all')" data-filter="all" class="filter-btn flex-1 px-2 py-1 text-xs font-medium rounded-md bg-blue-50 text-blue-600 transition-colors">전체</button>
-        <button onclick="filterStudents('하락')" data-filter="하락" class="filter-btn flex-1 px-2 py-1 text-xs font-medium rounded-md text-gray-500 hover:text-gray-700 transition-colors">하락</button>
-        <button onclick="filterStudents('유지')" data-filter="유지" class="filter-btn flex-1 px-2 py-1 text-xs font-medium rounded-md text-gray-500 hover:text-gray-700 transition-colors">유지</button>
-        <button onclick="filterStudents('상승')" data-filter="상승" class="filter-btn flex-1 px-2 py-1 text-xs font-medium rounded-md text-gray-500 hover:text-gray-700 transition-colors">상승</button>
+        <label class="f">
+          <span class="lab">특강 신청(결제) 링크</span>
+          <select id="selPay"></select>
+        </label>
       </div>
     </div>
-    <div class="flex-1 overflow-y-auto py-2" id="studentList">
-      <!-- empty state -->
-      <div id="sidebarEmpty" class="px-4 py-6 text-center">
-        <iconify-icon icon="solar:users-group-rounded-bold-duotone" class="text-gray-300" style="font-size:32px;"></iconify-icon>
-        <p class="text-xs text-gray-400 mt-2 leading-relaxed">CSV 파일을 업로드하면<br>학생 목록이 표시됩니다</p>
-      </div>
-    </div>
-    <div class="px-4 py-3 border-t border-gray-100 grid grid-cols-3 gap-2">
-      <div class="text-center"><div class="text-xs text-red-400 font-medium" id="countDown">-</div><div class="text-xs text-gray-400 mt-0.5">하락</div></div>
-      <div class="text-center"><div class="text-xs text-amber-500 font-medium" id="countMid">-</div><div class="text-xs text-gray-400 mt-0.5">유지</div></div>
-      <div class="text-center"><div class="text-xs text-emerald-500 font-medium" id="countUp">-</div><div class="text-xs text-gray-400 mt-0.5">상승</div></div>
-    </div>
-  </aside>
 
-  <!-- 메인 -->
-  <main class="flex-1 flex flex-col overflow-hidden">
-    <header class="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b border-gray-100 px-6 py-3 flex items-center justify-between">
-      <div>
-        <h1 class="text-base font-semibold text-gray-900">학부모 안내 멘트 생성</h1>
-        <p class="text-xs text-gray-400 mt-0.5">학생 데이터를 바탕으로 맞춤형 학부모 안내 멘트를 자동 생성합니다</p>
-      </div>
-      <div class="flex items-center gap-2">
-        <button onclick="openCsvModal()" class="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-          <iconify-icon icon="solar:upload-bold-duotone" style="font-size:14px;"></iconify-icon>
-          CSV 업로드
-        </button>
-        <button onclick="generateAll()" id="genAllBtn" disabled
-          class="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-          <iconify-icon icon="solar:magic-stick-bold-duotone" style="font-size:14px;"></iconify-icon>
-          전체 생성
-        </button>
-      </div>
-    </header>
-
-    <div class="flex-1 overflow-y-auto p-6">
-      <!-- 초기 안내 -->
-      <div id="emptyState" class="flex flex-col items-center justify-center" style="min-height:400px;">
-        <div class="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center mb-4">
-          <iconify-icon icon="solar:file-text-bold-duotone" class="text-blue-300" style="font-size:36px;"></iconify-icon>
+    <div class="card">
+      <div class="hd">학생 명단</div>
+      <div class="bd">
+        <label class="f">
+          <span class="lab">이름을 줄바꿈 또는 쉼표로 구분해 붙여넣기 (50명 이상 가능)</span>
+          <textarea id="taNames" placeholder="김서준&#10;이하윤&#10;박도현, 최지우, 정시우 …"></textarea>
+        </label>
+        <div style="display:flex; gap:8px">
+          <button class="btn primary" id="btnApply" style="flex:1">명단 적용</button>
+          <button class="btn" id="btnClear">비우기</button>
         </div>
-        <p class="text-gray-600 font-medium">CSV 파일을 업로드해 시작하세요</p>
-        <p class="text-gray-400 text-sm mt-1 text-center leading-relaxed">상단의 CSV 업로드 버튼을 클릭하거나<br>아래 버튼으로 샘플 데이터를 불러올 수 있습니다</p>
-        <button onclick="loadSampleData()" class="mt-4 flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors">
-          <iconify-icon icon="solar:database-bold-duotone" style="font-size:16px;"></iconify-icon>
-          샘플 데이터 불러오기
-        </button>
-      </div>
-
-      <!-- 전체 생성 결과 -->
-      <div id="allResults" class="hidden space-y-4"></div>
-
-      <!-- 개별 학생 상세 -->
-      <div id="studentDetail" class="hidden space-y-5">
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <div class="flex items-start justify-between mb-4">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-sm font-bold" id="detailAvatar"></div>
-              <div>
-                <h2 class="text-lg font-bold text-gray-900" id="detailName"></h2>
-                <div class="flex items-center gap-2 mt-0.5">
-                  <span class="text-sm text-gray-500" id="detailGrade"></span>
-                  <span class="w-1 h-1 rounded-full bg-gray-300"></span>
-                  <span id="detailResultBadge" class="px-2 py-0.5 rounded-full text-xs font-medium"></span>
-                </div>
-              </div>
-            </div>
-            <button onclick="generateSingle()"
-              class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
-              <iconify-icon icon="solar:magic-stick-bold-duotone" style="font-size:16px;"></iconify-icon>
-              멘트 생성
-            </button>
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div class="bg-gray-50 rounded-xl p-3"><p class="text-xs text-gray-400 mb-1">시험 일정</p><p class="text-sm text-gray-700 font-medium" id="detailSchedule"></p></div>
-            <div class="bg-gray-50 rounded-xl p-3"><p class="text-xs text-gray-400 mb-1">시험 대비 현황</p><p class="text-sm text-gray-700 font-medium" id="detailPrep"></p></div>
-            <div class="bg-gray-50 rounded-xl p-3"><p class="text-xs text-gray-400 mb-1">이전 성적</p><p class="text-sm text-gray-700 font-medium" id="detailPrevScore"></p></div>
-            <div class="bg-gray-50 rounded-xl p-3"><p class="text-xs text-gray-400 mb-1">목표 성적</p><p class="text-sm text-gray-700 font-medium" id="detailTargetScore"></p></div>
-            <div class="bg-gray-50 rounded-xl p-3 col-span-2"><p class="text-xs text-gray-400 mb-1">시험 범위</p><p class="text-sm text-gray-700 font-medium" id="detailScope"></p></div>
-          </div>
-        </div>
-        <div id="messageArea" class="hidden">
-          <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-            <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center gap-2">
-                <iconify-icon icon="solar:chat-round-bold-duotone" class="text-blue-500" style="font-size:18px;"></iconify-icon>
-                <span class="text-sm font-semibold text-gray-900">생성된 안내 멘트</span>
-              </div>
-              <div class="flex gap-2">
-                <button onclick="generateSingle()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                  <iconify-icon icon="solar:refresh-bold-duotone" style="font-size:14px;"></iconify-icon>재생성
-                </button>
-                <button onclick="copyMessage()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                  <iconify-icon icon="solar:copy-bold-duotone" style="font-size:14px;"></iconify-icon>복사
-                </button>
-              </div>
-            </div>
-            <div id="messageContent" class="message-box text-sm text-gray-700 leading-relaxed bg-gray-50 rounded-xl p-4 border border-gray-100"></div>
-          </div>
-        </div>
+        <p class="hint">명단은 이 페이지에 저장되어 다음에 열어도 유지됩니다.</p>
       </div>
     </div>
-  </main>
-</div>
+  </div>
 
-<!-- ══════════════════════════════════════
-     로그인 모달 (이름 입력 = 본인 학생 필터)
-══════════════════════════════════════ -->
-<div id="loginModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center modal-overlay bg-black/40">
-  <div class="bg-white rounded-2xl shadow-lg w-full max-w-sm mx-4 overflow-hidden">
-    <div class="px-6 pt-7 pb-2 text-center">
-      <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
-        <iconify-icon icon="solar:user-circle-bold-duotone" class="text-blue-500" style="font-size:30px;"></iconify-icon>
+  <!-- ══════════ 학생 목록 ══════════ -->
+  <div class="card col-list">
+    <div class="roster-head">
+      <div><b id="cntDone">0</b><span style="color:var(--muted)"> / </span><b id="cntAll">0</b><span style="color:var(--muted)"> 복사됨</span></div>
+      <button class="btn small" id="btnResetCopied">복사 표시 초기화</button>
+    </div>
+    <div class="roster" id="roster"></div>
+  </div>
+
+  <!-- ══════════ 미리보기 ══════════ -->
+  <div class="card col-preview">
+    <div class="pv-head">
+      <span class="who" id="pvName">미리보기</span>
+      <div class="pv-tags" id="pvTags"></div>
+      <div class="pv-actions">
+        <button class="btn primary" id="btnCopy">이 메시지 복사</button>
       </div>
-      <h2 class="text-base font-semibold text-gray-900">선생님 이름을 입력하세요</h2>
-      <p class="text-xs text-gray-400 mt-1 leading-relaxed">입력한 이름과 일치하는<br>담당 학생만 표시됩니다</p>
     </div>
-    <div class="px-6 py-4">
-      <input type="text" id="loginNameInput" placeholder="예: 홍길동" autocomplete="off"
-        onkeydown="if(event.key==='Enter')doLogin()"
-        class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-center" />
-      <div id="loginError" class="hidden text-xs text-red-500 mt-2 text-center"></div>
-    </div>
-    <div class="px-6 pb-6">
-      <button onclick="doLogin()"
-        class="w-full px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors">
-        시작하기
-      </button>
+    <div class="pv-body">
+      <pre class="msg" id="pvMsg"></pre>
     </div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     CSV 업로드 모달
-══════════════════════════════════════ -->
-<div id="csvModal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-overlay bg-black/30">
-  <div class="bg-white rounded-2xl shadow-lg w-full max-w-xl mx-4 overflow-hidden">
-    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-      <div class="flex items-center gap-2">
-        <iconify-icon icon="solar:file-text-bold-duotone" class="text-blue-500" style="font-size:20px;"></iconify-icon>
-        <span class="text-base font-semibold text-gray-900">학생 DB CSV 업로드</span>
-      </div>
-      <button onclick="closeCsvModal()" class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
-        <iconify-icon icon="solar:close-bold" style="font-size:16px;"></iconify-icon>
-      </button>
-    </div>
-    <div class="p-6 space-y-4">
+<div class="toast" id="toast" role="status"></div>
 
-      <!-- 드래그앤드롭 영역 -->
-      <div id="dropZone" class="drop-zone border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-blue-300 hover:bg-blue-50/30 transition-colors"
-           onclick="document.getElementById('csvFileInput').click()"
-           ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
-        <iconify-icon icon="solar:upload-bold-duotone" class="text-gray-300" style="font-size:36px;"></iconify-icon>
-        <p class="text-sm font-medium text-gray-500 mt-2">CSV 파일을 드래그하거나 클릭하여 선택</p>
-        <p class="text-xs text-gray-400 mt-1">UTF-8 인코딩 권장</p>
-        <input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="handleFileSelect(event)">
-      </div>
-
-      <!-- 컬럼 매핑 안내 -->
-      <div class="bg-gray-50 rounded-xl p-4">
-        <p class="text-xs font-semibold text-gray-500 mb-2">필수 CSV 컬럼 (첫 행 = 헤더)</p>
-        <div class="grid grid-cols-2 gap-1">
-          <div class="text-xs text-gray-500"><span class="font-mono bg-white border border-gray-200 rounded px-1 py-0.5">학생명</span></div>
-          <div class="text-xs text-gray-500"><span class="font-mono bg-white border border-gray-200 rounded px-1 py-0.5">학년</span></div>
-          <div class="text-xs text-gray-500"><span class="font-mono bg-white border border-gray-200 rounded px-1 py-0.5">시험 일정</span></div>
-          <div class="text-xs text-gray-500"><span class="font-mono bg-white border border-gray-200 rounded px-1 py-0.5">시험범위</span></div>
-          <div class="text-xs text-gray-500"><span class="font-mono bg-white border border-gray-200 rounded px-1 py-0.5">시험대비 현황</span></div>
-          <div class="text-xs text-gray-500"><span class="font-mono bg-white border border-gray-200 rounded px-1 py-0.5">이전점수</span></div>
-          <div class="text-xs text-gray-500"><span class="font-mono bg-white border border-gray-200 rounded px-1 py-0.5">목표점수</span></div>
-          <div class="text-xs text-gray-500"><span class="font-mono bg-white border border-gray-200 rounded px-1 py-0.5">예상 결과</span></div>
-        </div>
-        <p class="text-xs text-gray-400 mt-2">예상 결과 값: <span class="font-mono">성적 하락(부정)</span> · <span class="font-mono">성적 유지(보통)</span> · <span class="font-mono">성적 상승(긍정)</span></p>
-      </div>
-
-      <!-- 파싱 결과 요약 -->
-      <div id="csvPreview" class="hidden">
-        <div class="bg-gray-50 rounded-xl px-4 py-3 flex items-center justify-between">
-          <p class="text-sm font-medium text-gray-700">총 <span id="previewCount" class="text-blue-600 font-semibold"></span> 명 확인됨</p>
-          <div class="flex gap-2">
-            <span id="previewDown" class="text-xs px-2 py-0.5 rounded-full bg-red-50 text-red-500 font-medium"></span>
-            <span id="previewMid" class="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-500 font-medium"></span>
-            <span id="previewUp" class="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 font-medium"></span>
-          </div>
-        </div>
-      </div>
-
-      <div id="csvError" class="hidden bg-red-50 rounded-xl px-4 py-3 text-sm text-red-600"></div>
-    </div>
-    <div class="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
-      <button onclick="closeCsvModal()" class="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">취소</button>
-      <button onclick="loadCsvData()" id="loadCsvBtn" disabled
-        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-        불러오기
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════
-     설정 모달 (작성 규칙 커스터마이징)
-══════════════════════════════════════ -->
-<div id="settingsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-overlay bg-black/30">
-  <div class="bg-white rounded-2xl shadow-lg w-full max-w-2xl mx-4 flex flex-col" style="max-height:90vh;">
-    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
-      <div class="flex items-center gap-2">
-        <iconify-icon icon="solar:settings-bold-duotone" class="text-blue-500" style="font-size:20px;"></iconify-icon>
-        <span class="text-base font-semibold text-gray-900">작성 규칙 설정</span>
-      </div>
-      <button onclick="closeSettings()" class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
-        <iconify-icon icon="solar:close-bold" style="font-size:16px;"></iconify-icon>
-      </button>
-    </div>
-
-    <!-- 탭 -->
-    <div class="px-6 pt-4 shrink-0">
-      <div class="flex gap-1 border-b border-gray-100 pb-0">
-        <button onclick="switchSettingsTab('decline')" data-stab="decline" class="settings-tab px-4 py-2 text-sm rounded-t-lg tab-active transition-colors">
-          성적 하락
-        </button>
-        <button onclick="switchSettingsTab('maintain')" data-stab="maintain" class="settings-tab px-4 py-2 text-sm rounded-t-lg tab-inactive transition-colors">
-          성적 유지
-        </button>
-        <button onclick="switchSettingsTab('improve')" data-stab="improve" class="settings-tab px-4 py-2 text-sm rounded-t-lg tab-inactive transition-colors">
-          성적 상승
-        </button>
-      </div>
-    </div>
-
-    <!-- 탭 내용 -->
-    <div class="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-
-      <!-- 하락 탭 -->
-      <div id="stab-decline" class="space-y-4">
-        <div class="bg-red-50 rounded-xl px-4 py-3">
-          <p class="text-xs font-semibold text-red-500 mb-1">적용 원칙</p>
-          <p class="text-xs text-red-400 leading-relaxed">성적 하락 가능성을 숨기거나 단정적으로 표현하지 않으며, 학생의 긍정적 변화와 개선 계획을 함께 제시하여 학부모가 신뢰를 느낄 수 있도록 작성합니다.</p>
-        </div>
-        <div class="rule-section">
-          <label class="block text-xs font-semibold text-gray-600 mb-1.5">인사말 <span class="font-normal text-gray-400">(한 줄에 하나씩 — 학생마다 랜덤 선택)</span></label>
-          <textarea id="r_decline_greetings" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></textarea>
-        </div>
-        <div class="rule-section">
-          <label class="block text-xs font-semibold text-gray-600 mb-1.5">시험 준비 현황 설명 <span class="font-normal text-gray-400">(준비 유형별로 한 줄씩 — 구분: "개념보충|..." "문제풀이|..." "심화|..." "실전|...")</span></label>
-          <textarea id="r_decline_prep" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" style="min-height:120px;"></textarea>
-        </div>
-        <div class="rule-section">
-          <label class="block text-xs font-semibold text-gray-600 mb-1.5">원인 설명 문구 <span class="font-normal text-gray-400">(한 줄에 하나씩)</span></label>
-          <textarea id="r_decline_reasons" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></textarea>
-        </div>
-        <div class="rule-section">
-          <label class="block text-xs font-semibold text-gray-600 mb-1.5">긍정적 변화 표현 <span class="font-normal text-gray-400">(한 줄에 하나씩)</span></label>
-          <textarea id="r_decline_positive" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></textarea>
-        </div>
-        <div class="rule-section">
-          <label class="block text-xs font-semibold text-gray-600 mb-1.5">시험 후 보완 계획 <span class="font-normal text-gray-400">(한 줄에 하나씩)</span></label>
-          <textarea id="r_decline_afterplan" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></textarea>
-        </div>
-        <div class="rule-section">
-          <label class="block text-xs font-semibold text-gray-600 mb-1.5">다음 시험 개선 전략 <span class="font-normal text-gray-400">(한 줄에 하나씩)</span></label>
-          <textarea id="r_decline_nextstrat" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></textarea>
-        </div>
-        <div class="rule-section">
-          <label class="block text-xs font-semibold text-gray-600 mb-1.5">마무리 인사 <span class="font-normal text-gray-400">(한 줄에 하나씩)</span></label>
-          <textarea id="r_decline_closings" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></textarea>
-        </div>
-      </div>
-
-      <!-- 유지 탭 -->
-      <div id="stab-maintain" class="space-y-4 hidden">
-        <div class="bg-amber-50 rounded-xl px-4 py-3">
-          <p class="text-xs font-semibold text-amber-600 mb-1">적용 원칙</p>
-          <p class="text-xs text-amber-500 leading-relaxed">현재 안정적인 학습 흐름을 유지하고 있음을 신뢰감 있게 전달하고, 목표 점수 달성을 위한 준비 상황을 구체적으로 안내합니다.</p>
-        </div>
-        <div class="rule-section">
-          <label class="block text-xs font-semibold text-gray-600 mb-1.5">인사말 <span class="font-normal text-gray-400">(한 줄에 하나씩)</span></label>
-          <textarea id="r_maintain_greetings" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></textarea>
-        </div>
-        <div class="rule-section">
-          <label class="block text-xs font-semibold text-gray-600 mb-1.5">시험 준비 현황 설명 <span class="font-normal text-gray-400">(준비 유형별 — "개념보충|..." "문제풀이|..." "심화|..." "실전|...")</span></label>
-          <textarea id="r_maintain_prep" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" style="min-height:120px;"></textarea>
-        </div>
-        <div class="rule-section">
-          <label class="block text-xs font-semibold text-gray-600 mb-1.5">안정적 학습 상태 표현 <span class="font-normal text-gray-400">(한 줄에 하나씩)</span></label>
-          <textarea id="r_maintain_steady" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></textarea>
-        </div>
-        <div class="rule-section">
-          <label class="block text-xs font-semibold text-gray-600 mb-1.5">마무리 인사 <span class="font-normal text-gray-400">(한 줄에 하나씩)</span></label>
-          <textarea id="r_maintain_closings" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></textarea>
-        </div>
-      </div>
-
-      <!-- 상승 탭 -->
-      <div id="stab-improve" class="space-y-4 hidden">
-        <div class="bg-emerald-50 rounded-xl px-4 py-3">
-          <p class="text-xs font-semibold text-emerald-600 mb-1">적용 원칙</p>
-          <p class="text-xs text-emerald-500 leading-relaxed">학생의 성장과 노력을 구체적으로 전달하고, 이전 성적 대비 향상된 부분을 명확히 안내하여 학부모와 기쁨을 함께 나눕니다.</p>
-        </div>
-        <div class="rule-section">
-          <label class="block text-xs font-semibold text-gray-600 mb-1.5">인사말 <span class="font-normal text-gray-400">(한 줄에 하나씩)</span></label>
-          <textarea id="r_improve_greetings" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></textarea>
-        </div>
-        <div class="rule-section">
-          <label class="block text-xs font-semibold text-gray-600 mb-1.5">시험 준비 현황 설명 <span class="font-normal text-gray-400">(준비 유형별 — "개념보충|..." "문제풀이|..." "심화|..." "실전|...")</span></label>
-          <textarea id="r_improve_prep" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" style="min-height:120px;"></textarea>
-        </div>
-        <div class="rule-section">
-          <label class="block text-xs font-semibold text-gray-600 mb-1.5">노력 / 성장 표현 <span class="font-normal text-gray-400">(한 줄에 하나씩)</span></label>
-          <textarea id="r_improve_effort" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></textarea>
-        </div>
-        <div class="rule-section">
-          <label class="block text-xs font-semibold text-gray-600 mb-1.5">마무리 인사 <span class="font-normal text-gray-400">(한 줄에 하나씩)</span></label>
-          <textarea id="r_improve_closings" class="rule-textarea w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></textarea>
-        </div>
-      </div>
-    </div>
-
-    <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between shrink-0">
-      <button onclick="resetRules()" class="text-xs text-gray-400 hover:text-gray-600 transition-colors">기본값으로 초기화</button>
-      <div class="flex gap-2">
-        <button onclick="closeSettings()" class="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">취소</button>
-        <button onclick="saveRules()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">저장</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════
-     스크립트
-══════════════════════════════════════ -->
 <script>
+'use strict';
 
-// ── 연동 설정 (코다 ↔ n8n) ──────────────────────────
-const WEBHOOK_DB      = 'https://ontact.app.n8n.cloud/webhook/studentDB';   // GET: 학생 DB 불러오기
-const WEBHOOK_SAVE    = 'https://ontact.app.n8n.cloud/webhook/save-report'; // POST: 작성기록 업로드
-const WEBHOOK_RECORDS = 'https://ontact.app.n8n.cloud/webhook/get-records'; // GET: 작성기록 불러오기
-
-// ── 기본 규칙 정의 ──────────────────────────────────
-
-const DEFAULT_RULES = {
-  decline: {
-    greetings: [
-      "안녕하세요, 학부모님 😊 {name} 학생 담당 수학 선생님입니다.",
-      "학부모님, 안녕하세요 😊 {name} 학생 수학 담당 선생님입니다.",
-      "안녕하세요, 학부모님 😊 {name} 학생의 수학 수업을 맡고 있는 선생님입니다."
-    ],
-    prep: [
-      "개념보충|{name} 학생의 기초 개념을 탄탄히 다지는 수업을 진행하고 있습니다",
-      "개념보충|핵심 개념 이해를 우선으로 수업을 구성하고 있습니다",
-      "개념보충|개념 완성도를 높이는 데 집중하여 수업을 진행 중입니다",
-      "문제풀이|{name} 학생의 문제 적용력을 높이는 방향으로 수업을 진행하고 있습니다",
-      "문제풀이|다양한 유형의 문제를 반복 훈련하는 방식으로 수업을 구성하고 있습니다",
-      "문제풀이|실전 문제 풀이 중심으로 수업을 진행하며 적용력을 키우고 있습니다",
-      "심화|고난도 문제에 대한 적응력을 높이는 방향으로 수업을 진행하고 있습니다",
-      "심화|심화 유형 문제를 집중 훈련하며 실력 완성 단계에 있습니다",
-      "심화|변별력 있는 문항에 대비한 심화 훈련을 꾸준히 진행하고 있습니다",
-      "실전|실전과 동일한 조건에서 모의 평가를 실시하며 실전 감각을 키우고 있습니다",
-      "실전|시험 환경과 동일한 상황에서 연습을 반복하여 실전 대응력을 높이고 있습니다",
-      "실전|모의 시험을 통한 최종 점검 단계에 있습니다"
-    ],
-    reasons: [
-      "이번 시험 범위가 개념 이해와 적용이 동시에 요구되는 단원인 만큼, 완성도 측면에서 아직 보완이 필요한 부분이 남아 있습니다",
-      "이번 시험 범위가 다소 광범위하고 난이도가 높은 단원을 포함하고 있어 목표 점수 달성까지 추가적인 준비가 필요한 상황입니다",
-      "관련 단원의 개념 적용 문제에서 아직 안정적인 풀이가 이루어지기까지 좀 더 시간이 필요한 상황입니다"
-    ],
-    positive: [
-      "수업 중 질문하는 빈도가 늘었고, 어려운 문제에 끝까지 도전하는 태도가 이전보다 눈에 띄게 향상되었습니다",
-      "수업 참여 자세가 꾸준하고 성실하며, 주어진 과제도 빠짐없이 수행하고 있습니다",
-      "최근 수업에서 집중도가 높아지고 스스로 풀이 과정을 확인하는 습관이 형성되고 있습니다",
-      "이전에 어렵게 느끼던 유형에서 풀이 속도와 정확도 모두 향상되고 있는 점은 고무적입니다",
-      "수업 태도와 집중력 면에서 꾸준한 발전이 확인되고 있으며, 기초 개념에 대한 이해도가 점진적으로 올라오고 있습니다"
-    ],
-    afterplan: [
-      "📝 시험 이후에는 오답 분석을 통해 취약 단원을 정확히 파악하고, 해당 유형을 집중적으로 재학습하는 방향으로 보완 수업을 진행할 예정입니다",
-      "📝 시험 결과를 바탕으로 단원별 부족한 부분을 구체적으로 진단하고, 다음 평가를 위한 보완 계획을 수립하여 즉시 적용할 예정입니다",
-      "📝 시험 후 오답 유형 분석을 실시하고, 반복 실수가 발생한 문제 유형을 중심으로 집중 보강 수업을 진행할 계획입니다"
-    ],
-    nextstrat: [
-      "다음 평가에서는 이번에 확인된 취약 부분을 사전에 충분히 보완하여 보다 안정적인 결과를 만들어 나갈 수 있도록 관리하겠습니다",
-      "다음 시험에서는 이번 준비 과정에서 파악된 보완점을 반영한 맞춤형 학습 계획으로 접근하겠습니다",
-      "이번 경험을 바탕으로 다음 평가에서는 더 탄탄한 준비가 이루어질 수 있도록 단계별로 체계적으로 관리해 나가겠습니다"
-    ],
-    closings: [
-      "항상 {name} 학생의 성장을 응원하며, 궁금하신 점이 있으시면 언제든지 연락 주시기 바랍니다. 감사합니다 🙏",
-      "{name} 학생이 좋은 결과를 낼 수 있도록 끝까지 함께 준비하겠습니다. 감사합니다 🙏",
-      "앞으로도 {name} 학생의 성장을 위해 최선을 다해 지도하겠습니다. 감사합니다 🙏"
-    ]
-  },
-  maintain: {
-    greetings: [
-      "안녕하세요, 학부모님 😊 {name} 학생 담당 수학 선생님입니다.",
-      "학부모님, 안녕하세요 😊 {name} 학생의 수학 수업을 담당하고 있는 선생님입니다.",
-      "안녕하세요, 학부모님 😊 {name} 학생 수학 담당 선생님입니다."
-    ],
-    prep: [
-      "개념보충|{name} 학생의 기초 개념을 탄탄히 다지는 수업을 진행하고 있습니다",
-      "개념보충|핵심 개념 이해를 우선으로 수업을 구성하고 있습니다",
-      "개념보충|개념 완성도를 높이는 데 집중하여 수업을 진행 중입니다",
-      "문제풀이|{name} 학생의 문제 적용력을 높이는 방향으로 수업을 진행하고 있습니다",
-      "문제풀이|다양한 유형의 문제를 반복 훈련하는 방식으로 수업을 구성하고 있습니다",
-      "문제풀이|실전 문제 풀이 중심으로 수업을 진행하며 적용력을 키우고 있습니다",
-      "심화|고난도 문제에 대한 적응력을 높이는 방향으로 수업을 진행하고 있습니다",
-      "심화|심화 유형 문제를 집중 훈련하며 실력 완성 단계에 있습니다",
-      "심화|변별력 있는 문항에 대비한 심화 훈련을 꾸준히 진행하고 있습니다",
-      "실전|실전과 동일한 조건에서 모의 평가를 실시하며 실전 감각을 키우고 있습니다",
-      "실전|시험 환경과 동일한 상황에서 연습을 반복하여 실전 대응력을 높이고 있습니다",
-      "실전|모의 시험을 통한 최종 점검 단계에 있습니다"
-    ],
-    steady: [
-      "수업 참여 태도가 성실하고 과제 수행도 꾸준히 이루어지고 있어, 현재의 학습 흐름이 잘 유지되고 있습니다",
-      "수업 집중도가 안정적으로 유지되고 있으며, 반복 학습을 통해 개념 완성도를 높여가고 있습니다",
-      "현재 학습 페이스가 안정적이며, 주요 단원에 대한 이해도도 점차 높아지고 있습니다"
-    ],
-    closings: [
-      "앞으로도 {name} 학생이 꾸준히 성장할 수 있도록 세심하게 관리하겠습니다. 궁금하신 점이 있으시면 언제든지 연락 주세요. 감사합니다 📚",
-      "시험까지 남은 기간 동안 최선을 다해 지도하겠습니다. 감사합니다 📚",
-      "앞으로도 {name} 학생의 학습 흐름이 잘 이어질 수 있도록 지속적으로 관리해 나가겠습니다. 감사합니다 📚"
-    ]
-  },
-  improve: {
-    greetings: [
-      "안녕하세요, 학부모님 😊 {name} 학생 담당 수학 선생님입니다.",
-      "학부모님, 안녕하세요 😊 {name} 학생의 수학 수업을 담당하고 있는 선생님입니다."
-    ],
-    prep: [
-      "개념보충|{name} 학생의 기초 개념을 탄탄히 다지는 수업을 진행하고 있습니다",
-      "개념보충|핵심 개념 이해를 우선으로 수업을 구성하고 있습니다",
-      "개념보충|개념 완성도를 높이는 데 집중하여 수업을 진행 중입니다",
-      "문제풀이|{name} 학생의 문제 적용력을 높이는 방향으로 수업을 진행하고 있습니다",
-      "문제풀이|다양한 유형의 문제를 반복 훈련하는 방식으로 수업을 구성하고 있습니다",
-      "문제풀이|실전 문제 풀이 중심으로 수업을 진행하며 적용력을 키우고 있습니다",
-      "심화|고난도 문제에 대한 적응력을 높이는 방향으로 수업을 진행하고 있습니다",
-      "심화|심화 유형 문제를 집중 훈련하며 실력 완성 단계에 있습니다",
-      "심화|변별력 있는 문항에 대비한 심화 훈련을 꾸준히 진행하고 있습니다",
-      "실전|실전과 동일한 조건에서 모의 평가를 실시하며 실전 감각을 키우고 있습니다",
-      "실전|시험 환경과 동일한 상황에서 연습을 반복하여 실전 대응력을 높이고 있습니다",
-      "실전|모의 시험을 통한 최종 점검 단계에 있습니다"
-    ],
-    effort: [
-      "최근 수업에서 이해도와 집중력이 크게 향상된 것이 확인되며, 스스로 어려운 문제에 도전하는 태도도 눈에 띄게 성장했습니다",
-      "수업 중 질문의 질이 높아지고 있으며, 개념을 스스로 연결하여 문제에 적용하는 능력이 발전하고 있습니다",
-      "꾸준한 연습과 반복을 통해 풀이 정확도가 향상되었고, 어려운 유형에서도 자신감 있게 접근하는 모습이 자주 보입니다",
-      "최근 들어 오답 분석을 스스로 하려는 태도가 보이고 있으며, 이러한 학습 습관이 실력 향상의 큰 원동력이 되고 있습니다"
-    ],
-    closings: [
-      "앞으로도 이 좋은 흐름이 이어질 수 있도록 끝까지 함께 관리하겠습니다. 궁금하신 점이 있으시면 언제든지 연락 주시기 바랍니다. 감사합니다 💪",
-      "시험까지 남은 기간에도 최선을 다해 지도하여 좋은 결과로 이어질 수 있도록 하겠습니다. 감사합니다 💪",
-      "{name} 학생의 노력이 좋은 결과로 이어질 수 있도록 마지막까지 함께 준비하겠습니다. 감사합니다 💪"
-    ]
-  }
+/* ───────────────────── 링크 ───────────────────── */
+const PAY_LINKS = {
+  high: [
+    { id:'hw', label:'고등 주말', url:'https://payment.mildang.kr/VRis-2j9U1gincVs5l-6-' },
+    { id:'hd', label:'고등 주간', url:'https://payment.mildang.kr/bpye0i9cFtgsIQXuidTUJ' },
+  ],
+  middle: [
+    { id:'mw', label:'중등 주말', url:'https://payment.mildang.kr/eB1XiJiIXdtX9LK6G722h' },
+    { id:'md', label:'중등 주간', url:'https://payment.mildang.kr/yymmlIfBt2-my3RUEWXSR' },
+  ],
 };
 
-// 현재 규칙 (localStorage 또는 기본값)
-let RULES = JSON.parse(JSON.stringify(DEFAULT_RULES));
-
-function loadRules() {
-  const saved = localStorage.getItem('mentRules');
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      RULES = parsed;
-    } catch(e) {}
-  }
-}
-
-function saveRules() {
-  collectRulesFromUI();
-  localStorage.setItem('mentRules', JSON.stringify(RULES));
-  closeSettings();
-  showToast('작성 규칙이 저장되었습니다');
-}
-
-function resetRules() {
-  if (!confirm('모든 작성 규칙을 기본값으로 초기화할까요?')) return;
-  RULES = JSON.parse(JSON.stringify(DEFAULT_RULES));
-  localStorage.removeItem('mentRules');
-  fillRulesUI();
-  showToast('기본값으로 초기화되었습니다');
-}
-
-// ── 설정 UI ────────────────────────────────────────
-
-function arrToText(arr) { return (arr || []).join('\n'); }
-function textToArr(text) { return text.split('\n').map(l => l.trim()).filter(Boolean); }
-
-function fillRulesUI() {
-  const r = RULES;
-  document.getElementById('r_decline_greetings').value = arrToText(r.decline.greetings);
-  document.getElementById('r_decline_prep').value = arrToText(r.decline.prep);
-  document.getElementById('r_decline_reasons').value = arrToText(r.decline.reasons);
-  document.getElementById('r_decline_positive').value = arrToText(r.decline.positive);
-  document.getElementById('r_decline_afterplan').value = arrToText(r.decline.afterplan);
-  document.getElementById('r_decline_nextstrat').value = arrToText(r.decline.nextstrat);
-  document.getElementById('r_decline_closings').value = arrToText(r.decline.closings);
-  document.getElementById('r_maintain_greetings').value = arrToText(r.maintain.greetings);
-  document.getElementById('r_maintain_prep').value = arrToText(r.maintain.prep);
-  document.getElementById('r_maintain_steady').value = arrToText(r.maintain.steady);
-  document.getElementById('r_maintain_closings').value = arrToText(r.maintain.closings);
-  document.getElementById('r_improve_greetings').value = arrToText(r.improve.greetings);
-  document.getElementById('r_improve_prep').value = arrToText(r.improve.prep);
-  document.getElementById('r_improve_effort').value = arrToText(r.improve.effort);
-  document.getElementById('r_improve_closings').value = arrToText(r.improve.closings);
-}
-
-function collectRulesFromUI() {
-  RULES.decline.greetings = textToArr(document.getElementById('r_decline_greetings').value);
-  RULES.decline.prep = textToArr(document.getElementById('r_decline_prep').value);
-  RULES.decline.reasons = textToArr(document.getElementById('r_decline_reasons').value);
-  RULES.decline.positive = textToArr(document.getElementById('r_decline_positive').value);
-  RULES.decline.afterplan = textToArr(document.getElementById('r_decline_afterplan').value);
-  RULES.decline.nextstrat = textToArr(document.getElementById('r_decline_nextstrat').value);
-  RULES.decline.closings = textToArr(document.getElementById('r_decline_closings').value);
-  RULES.maintain.greetings = textToArr(document.getElementById('r_maintain_greetings').value);
-  RULES.maintain.prep = textToArr(document.getElementById('r_maintain_prep').value);
-  RULES.maintain.steady = textToArr(document.getElementById('r_maintain_steady').value);
-  RULES.maintain.closings = textToArr(document.getElementById('r_maintain_closings').value);
-  RULES.improve.greetings = textToArr(document.getElementById('r_improve_greetings').value);
-  RULES.improve.prep = textToArr(document.getElementById('r_improve_prep').value);
-  RULES.improve.effort = textToArr(document.getElementById('r_improve_effort').value);
-  RULES.improve.closings = textToArr(document.getElementById('r_improve_closings').value);
-}
-
-let currentSettingsTab = 'decline';
-function switchSettingsTab(tab) {
-  currentSettingsTab = tab;
-  ['decline','maintain','improve'].forEach(t => {
-    document.getElementById(`stab-${t}`).classList.toggle('hidden', t !== tab);
-    document.querySelector(`[data-stab="${t}"]`).className =
-      `settings-tab px-4 py-2 text-sm rounded-t-lg transition-colors ${t === tab ? 'tab-active' : 'tab-inactive'}`;
-  });
-}
-
-function openSettings() {
-  fillRulesUI();
-  document.getElementById('settingsModal').classList.remove('hidden');
-}
-function closeSettings() { document.getElementById('settingsModal').classList.add('hidden'); }
-
-// ── CSV 처리 ─────────────────────────────────────
-
-let parsedStudents = null;
-
-function parseCSV(text) {
-  // BOM 제거
-  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
-
-  // 스트리밍 파서: 따옴표 안의 줄바꿈 포함 셀을 올바르게 처리
-  const rows = [];
-  let i = 0;
-  while (i < text.length) {
-    const row = [];
-    while (i < text.length) {
-      let field = '';
-      if (text[i] === '"') {
-        i++; // 여는 따옴표 건너뜀
-        while (i < text.length) {
-          if (text[i] === '"') {
-            if (text[i + 1] === '"') { field += '"'; i += 2; } // escaped quote
-            else { i++; break; } // 닫는 따옴표
-          } else {
-            field += text[i++];
-          }
-        }
-        // 따옴표 닫힌 후 쉼표/줄바꿈까지 공백 무시
-        while (i < text.length && text[i] !== ',' && text[i] !== '\r' && text[i] !== '\n') i++;
-      } else {
-        // 따옴표 없는 필드: 쉼표나 줄바꿈까지
-        while (i < text.length && text[i] !== ',' && text[i] !== '\r' && text[i] !== '\n') {
-          field += text[i++];
-        }
-      }
-      row.push(field.trim());
-      if (i < text.length && text[i] === ',') { i++; continue; }
-      break;
-    }
-    // 줄바꿈 건너뜀
-    if (i < text.length && text[i] === '\r') i++;
-    if (i < text.length && text[i] === '\n') i++;
-    if (row.some(f => f !== '')) rows.push(row);
-  }
-
-  if (rows.length < 2) throw new Error('데이터가 부족합니다. 헤더와 1행 이상의 데이터가 필요합니다.');
-
-  const headers = rows[0].map(h => h.trim());
-
-  const colMap = {
-    owner:           findCol(headers, ['정규T','담당자','담당 선생님','담당선생님','선생님','teacher']),
-    name:            findCol(headers, ['학생명','이름','name']),
-    grade:           findCol(headers, ['학년','grade']),
-    exam_schedule:   findCol(headers, ['시험 일정','시험일정','exam_schedule']),
-    exam_scope:      findCol(headers, ['시험범위','시험 범위','exam_scope']),
-    prep_status:     findCol(headers, ['시험대비 현황','시험대비현황','prep_status','대비현황']),
-    prev_score:      findCol(headers, ['이전점수','이전 점수','prev_score']),
-    target_score:    findCol(headers, ['목표점수','목표 점수','target_score']),
-    expected_result: findCol(headers, ['예상 결과','예상결과','expected_result'])
-  };
-
-  if (colMap.name < 0) throw new Error('"학생명" 컬럼을 찾을 수 없습니다.');
-  if (colMap.expected_result < 0) throw new Error('"예상 결과" 컬럼을 찾을 수 없습니다.');
-
-  const students = [];
-  for (let r = 1; r < rows.length; r++) {
-    const cols = rows[r];
-    const name = (cols[colMap.name] || '').trim();
-    if (!name) continue;
-    students.push({
-      name,
-      owner:           colMap.owner           >= 0 ? (cols[colMap.owner]           || '').trim() : '',
-      grade:           colMap.grade           >= 0 ? (cols[colMap.grade]           || '').trim() : '',
-      exam_schedule:   colMap.exam_schedule   >= 0 ? (cols[colMap.exam_schedule]   || '').trim() : '',
-      exam_scope:      colMap.exam_scope      >= 0 ? (cols[colMap.exam_scope]      || '').trim() : '',
-      prep_status:     colMap.prep_status     >= 0 ? (cols[colMap.prep_status]     || '').trim() : '',
-      prev_score:      colMap.prev_score      >= 0 ? (cols[colMap.prev_score]      || '').trim() : '',
-      target_score:    colMap.target_score    >= 0 ? (cols[colMap.target_score]    || '').trim() : '',
-      expected_result: colMap.expected_result >= 0 ? (cols[colMap.expected_result] || '').trim() : ''
-    });
-  }
-  if (students.length === 0) throw new Error('파싱된 학생 데이터가 없습니다.');
-  return students;
-}
-
-function findCol(headers, candidates) {
-  for (const c of candidates) {
-    const i = headers.findIndex(h => h === c);
-    if (i >= 0) return i;
-  }
-  return -1;
-}
-
-function handleFileSelect(e) {
-  const file = e.target.files[0];
-  if (file) readCSVFile(file);
-}
-function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
-function handleDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
-function handleDrop(e) {
-  e.preventDefault();
-  e.currentTarget.classList.remove('drag-over');
-  const file = e.dataTransfer.files[0];
-  if (file) readCSVFile(file);
-}
-
-function readCSVFile(file) {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    try {
-      const students = parseCSV(e.target.result);
-      parsedStudents = students;
-      showCSVPreview(students);
-      document.getElementById('csvError').classList.add('hidden');
-      document.getElementById('loadCsvBtn').disabled = false;
-    } catch(err) {
-      document.getElementById('csvError').textContent = err.message;
-      document.getElementById('csvError').classList.remove('hidden');
-      document.getElementById('csvPreview').classList.add('hidden');
-      document.getElementById('loadCsvBtn').disabled = true;
-    }
-  };
-  reader.readAsText(file, 'UTF-8');
-}
-
-function showCSVPreview(students) {
-  const down = students.filter(s => s.expected_result.includes('하락')).length;
-  const mid  = students.filter(s => s.expected_result.includes('유지')).length;
-  const up   = students.filter(s => s.expected_result.includes('상승')).length;
-
-  document.getElementById('previewCount').textContent = students.length;
-  document.getElementById('previewDown').textContent = `하락 ${down}명`;
-  document.getElementById('previewMid').textContent = `유지 ${mid}명`;
-  document.getElementById('previewUp').textContent = `상승 ${up}명`;
-  document.getElementById('csvPreview').classList.remove('hidden');
-}
-
-function loadCsvData() {
-  if (!parsedStudents) return;
-  ALL_STUDENTS = parsedStudents;
-  localStorage.setItem('mentCachedDB', JSON.stringify(ALL_STUDENTS));
-  activateStudents();
-  closeCsvModal();
-  const hasOwner = ALL_STUDENTS.some(s => (s.owner || '').trim());
-  showToast(hasOwner
-    ? `담당 학생 ${STUDENTS.length}명 (전체 ${ALL_STUDENTS.length}명)을 불러왔습니다`
-    : `${STUDENTS.length}명의 학생 데이터가 불러와졌습니다`);
-}
-
-function openCsvModal() {
-  parsedStudents = null;
-  document.getElementById('csvFileInput').value = '';
-  document.getElementById('csvPreview').classList.add('hidden');
-  document.getElementById('csvError').classList.add('hidden');
-  document.getElementById('loadCsvBtn').disabled = true;
-  document.getElementById('csvModal').classList.remove('hidden');
-}
-function closeCsvModal() { document.getElementById('csvModal').classList.add('hidden'); }
-
-// ── 메시지 생성 엔진 ─────────────────────────────
-
-function seededPick(arr, seed) {
-  if (!arr || arr.length === 0) return '';
-  const h = [...(seed||'x')].reduce((a, c) => Math.imul(31, a) + c.charCodeAt(0) | 0, 0);
-  return arr[Math.abs(h) % arr.length];
-}
-
-function applyVar(str, s) {
-  return (str || '').replace(/\{name\}/g, s.name).replace(/\{grade\}/g, s.grade);
-}
-
-function cleanScope(scope) {
-  if (!scope) return '';
-  const lines = scope.split(/[\n,]/).map(l => l.trim()).filter(l =>
-    l && !l.startsWith('목표') && !l.match(/^[가-힣]{0,2}[A-Z]\s*:/) && !l.match(/특강/)
-  );
-  return lines.slice(0, 2).join(', ') || scope.split('\n')[0].trim();
-}
-
-function getPrepDesc(prepStatus, type, s) {
-  const poolLines = RULES[type].prep || [];
-  const keyMap = { '개념 보충': '개념보충', '문제 풀이 위주': '문제풀이', '심화 문제 대비': '심화', '실전 모의 평가': '실전' };
-  const key = keyMap[prepStatus] || prepStatus;
-  const matching = poolLines.filter(l => l.startsWith(key + '|')).map(l => l.slice(l.indexOf('|')+1));
-  const pool = matching.length ? matching : poolLines.filter(l => !l.includes('|'));
-  return applyVar(seededPick(pool, s.name + prepStatus), s);
-}
-
-function generateMessage(s) {
-  if (s.expected_result.includes('하락')) return genDecline(s);
-  if (s.expected_result.includes('상승')) return genImprove(s);
-  return genMaintain(s);
-}
-
-function genDecline(s) {
-  const R = RULES.decline;
-  const greeting = applyVar(seededPick(R.greetings, s.name + 'g'), s);
-  const schedule = s.exam_schedule ? `${s.exam_schedule.replace(/\n/g,' ')} ` : '';
-  const scope = cleanScope(s.exam_scope);
-  const prep = getPrepDesc(s.prep_status, 'decline', s);
-  const reason = seededPick(R.reasons, s.name + 'r');
-  const positive = seededPick(R.positive, s.name + 'p');
-  const afterPlan = seededPick(R.afterplan, s.name + 'a');
-  const nextStrat = seededPick(R.nextstrat, s.name + 'n');
-  const closing = applyVar(seededPick(R.closings, s.name + 'c'), s);
-
-  let p1 = `${greeting}\n\n${schedule ? `다가오는 ${schedule}내신 시험을 앞두고 ` : ''}${s.name} 학생의 현재 학습 현황을 안내드립니다.\n\n${prep}.`;
-  if (scope) p1 += ` 이번 시험 범위는 ${scope} 단원으로, 해당 내용을 중심으로 수업을 진행하고 있습니다.`;
-
-  let p2 = '';
-  const hasPrev = s.prev_score.trim(), hasTarget = s.target_score.trim();
-  if (hasPrev && hasTarget) {
-    p2 = `\n\n이전 시험에서 ${s.prev_score.replace(/\n/g,' ')}의 결과를 기록하였으며, 이번 시험에서는 ${s.target_score}점을 목표로 준비하고 있습니다. 다만, 현재까지 확인된 학습 수준으로는 목표 점수까지 다소 보완이 필요한 상황입니다. ${reason}.`;
-  } else if (hasPrev) {
-    p2 = `\n\n이전 시험 결과(${s.prev_score.replace(/\n/g,' ')})와 비교하여 현재 학습 상태를 점검하고 있으며, 이번 시험에서 일부 단원에서 아쉬움이 남을 수 있는 상황입니다. ${reason}.`;
-  } else if (hasTarget) {
-    p2 = `\n\n이번 시험 목표는 ${s.target_score}점입니다. 현재까지 확인된 학습 수준으로는 목표 달성을 위해 다소 보완이 필요한 상황입니다. ${reason}.`;
-  } else {
-    p2 = `\n\n이번 시험에서는 일부 단원에서 아쉬움이 남을 수 있는 상황입니다. ${reason}.`;
-  }
-
-  const p3 = `\n\n이번 시험 결과와 별개로, ${positive}.`;
-  const p4 = `\n\n${afterPlan}. ${nextStrat}.\n\n${closing}`;
-
-  return p1 + p2 + p3 + p4;
-}
-
-function genMaintain(s) {
-  const R = RULES.maintain;
-  const greeting = applyVar(seededPick(R.greetings, s.name + 'g'), s);
-  const schedule = s.exam_schedule ? `${s.exam_schedule.replace(/\n/g,' ')} ` : '';
-  const scope = cleanScope(s.exam_scope);
-  const prep = getPrepDesc(s.prep_status, 'maintain', s);
-  const steady = seededPick(R.steady, s.name + 's');
-  const closing = applyVar(seededPick(R.closings, s.name + 'c'), s);
-
-  let p1 = `${greeting}\n\n${schedule ? `${schedule}내신 시험을 앞두고 ` : ''}${s.name} 학생의 현재 학습 현황을 안내드립니다.\n\n${prep}.`;
-  if (scope) p1 += ` 현재 ${scope} 단원을 중심으로 내실 있게 학습을 이어가고 있습니다.`;
-
-  const p2 = `\n\n${steady}.`;
-
-  const hasPrev = s.prev_score.trim(), hasTarget = s.target_score.trim();
-  let p3 = '';
-  if (hasPrev && hasTarget) {
-    p3 = `\n\n이전 시험에서 ${s.prev_score.replace(/\n/g,' ')}을(를) 기록하였으며, 이번 시험에서도 ${s.target_score}점 수준의 안정적인 결과를 목표로 준비하고 있습니다. 현재 학습 상태를 유지하며 시험까지 꾸준히 관리해 나가겠습니다.`;
-  } else if (hasTarget) {
-    p3 = `\n\n이번 시험 목표는 ${s.target_score}점으로, 현재 학습 진행 상황을 바탕으로 목표 달성이 가능한 수준으로 준비되고 있습니다.`;
-  } else if (hasPrev) {
-    p3 = `\n\n이전 시험(${s.prev_score.replace(/\n/g,' ')}) 수준을 유지·발전시킬 수 있도록 꾸준히 관리해 나가고 있습니다.`;
-  }
-
-  return p1 + p2 + p3 + `\n\n${closing}`;
-}
-
-function genImprove(s) {
-  const R = RULES.improve;
-  const greeting = applyVar(seededPick(R.greetings, s.name + 'g'), s);
-  const schedule = s.exam_schedule ? `${s.exam_schedule.replace(/\n/g,' ')} ` : '';
-  const scope = cleanScope(s.exam_scope);
-  const prep = getPrepDesc(s.prep_status, 'improve', s);
-  const effort = seededPick(R.effort, s.name + 'e');
-  const closing = applyVar(seededPick(R.closings, s.name + 'c'), s);
-
-  let p1 = `${greeting}\n\n${schedule ? `${schedule}내신 시험을 앞두고 ` : ''}${s.name} 학생의 최근 학습 현황을 기쁜 마음으로 안내드립니다.\n\n${prep}.`;
-  if (scope) p1 += ` ${scope} 단원을 중심으로 수업을 진행하고 있으며, 학습 완성도가 점차 높아지고 있습니다.`;
-
-  const hasPrev = s.prev_score.trim(), hasTarget = s.target_score.trim();
-  let p2 = '';
-  if (hasPrev && hasTarget) {
-    p2 = `\n\n이전 시험(${s.prev_score.replace(/\n/g,' ')})과 비교하여 현재 ${s.name} 학생의 실력이 눈에 띄게 향상되고 있습니다. 이번 시험에서는 ${s.target_score}점을 목표로 준비하고 있으며, 현재 학습 흐름상 충분히 도달 가능한 수준이라고 판단하고 있습니다.`;
-  } else if (hasPrev) {
-    p2 = `\n\n이전 시험(${s.prev_score.replace(/\n/g,' ')}) 이후 꾸준한 노력으로 이해도와 문제 풀이 속도 모두 향상되었습니다. 이번 시험에서 그 결과가 잘 반영될 것으로 기대하고 있습니다.`;
-  } else if (hasTarget) {
-    p2 = `\n\n이번 시험에서 ${s.target_score}점을 목표로 준비하고 있으며, 현재 학습 진행 상황을 보면 목표 달성에 충분히 도달할 수 있는 상태입니다.`;
-  }
-
-  const p3 = `\n\n${effort}.`;
-
-  return p1 + p2 + p3 + `\n\n${closing}`;
-}
-
-// ── UI 공통 ──────────────────────────────────────
-
-let ALL_STUDENTS = [];   // DB/CSV 전체 (담당자 필터 전)
-let STUDENTS = [];        // 로그인 사용자의 담당 학생만
-let selectedIndex = -1;
-let currentFilter = 'all';
-let currentUser = '';     // 로그인한 선생님 이름
-
-// ── 로그인 (이름 입력 = 본인 학생 필터) ──────────────
-
-function showLogin() {
-  document.getElementById('loginModal').classList.remove('hidden');
-  document.getElementById('loginError').classList.add('hidden');
-  const inp = document.getElementById('loginNameInput');
-  inp.value = '';
-  setTimeout(() => inp.focus(), 50);
-}
-
-function doLogin() {
-  const name = document.getElementById('loginNameInput').value.trim();
-  if (!name) {
-    const err = document.getElementById('loginError');
-    err.textContent = '이름을 입력해주세요';
-    err.classList.remove('hidden');
-    return;
-  }
-  currentUser = name;
-  localStorage.setItem('mentCurrentUser', name);
-  document.getElementById('loginModal').classList.add('hidden');
-  document.getElementById('currentUserLabel').textContent = name + ' 선생님';
-  loadRecords();
-  loadServerRecords();    // 서버(코다)의 작성기록 병합 복원
-  loadCachedDB();         // 캐시 즉시 표시
-  refreshStudentDB();     // 서버에서 최신 DB 동기화
-}
-
-function logout() {
-  localStorage.removeItem('mentCurrentUser');
-  currentUser = '';
-  ALL_STUDENTS = [];
-  STUDENTS = [];
-  selectedIndex = -1;
-  document.getElementById('currentUserLabel').textContent = '-';
-  document.getElementById('emptyState').classList.remove('hidden');
-  document.getElementById('studentDetail').classList.add('hidden');
-  document.getElementById('allResults').classList.add('hidden');
-  document.getElementById('genAllBtn').disabled = true;
-  renderStudentList();
-  showLogin();
-}
-
-// ── 학생 DB 불러오기 (코다 ← n8n) ────────────────────
-
-function applyUserFilter() {
-  // 담당자 정보가 하나라도 있으면 본인 학생만, 전혀 없으면 전체 표시
-  const hasOwner = ALL_STUDENTS.some(s => (s.owner || '').trim());
-  STUDENTS = hasOwner
-    ? ALL_STUDENTS.filter(s => (s.owner || '').trim() === currentUser)
-    : ALL_STUDENTS.slice();
-}
-
-function activateStudents() {
-  applyUserFilter();
-  selectedIndex = -1;
-  document.getElementById('studentDetail').classList.add('hidden');
-  document.getElementById('allResults').classList.add('hidden');
-  document.getElementById('emptyState').classList.toggle('hidden', STUDENTS.length > 0);
-  document.getElementById('genAllBtn').disabled = STUDENTS.length === 0;
-  renderStudentList();
-}
-
-function normalizeStudent(raw) {
-  const g = (...keys) => {
-    for (const k of keys) {
-      if (raw[k] != null && String(raw[k]).trim() !== '') return String(raw[k]).trim();
-    }
-    return '';
-  };
-  return {
-    name:            g('학생명','이름','name'),
-    owner:           g('정규T','담당자','담당 선생님','담당선생님','선생님','teacher'),
-    grade:           g('학년','grade'),
-    exam_schedule:   g('시험 일정','시험일정','exam_schedule'),
-    exam_scope:      g('시험범위','시험 범위','exam_scope'),
-    prep_status:     g('시험대비 현황','시험대비현황','대비현황','prep_status'),
-    prev_score:      g('이전점수','이전 점수','prev_score'),
-    target_score:    g('목표점수','목표 점수','target_score'),
-    expected_result: g('예상 결과','예상결과','expected_result')
-  };
-}
-
-async function refreshStudentDB() {
-  if (!currentUser) return;
-  showToast('학생 DB를 불러오는 중...');
-  try {
-    const res = await fetch(`${WEBHOOK_DB}?선생님=${encodeURIComponent(currentUser)}`, { method: 'GET' });
-    if (!res.ok) throw new Error('서버 응답 오류 ' + res.status);
-    let data = await res.json();
-    if (!Array.isArray(data)) data = data.students || data.data || [];
-    const students = data.map(normalizeStudent).filter(s => s.name);
-    if (!students.length) throw new Error('빈 데이터');
-    ALL_STUDENTS = students;
-    localStorage.setItem('mentCachedDB', JSON.stringify(students));
-    activateStudents();
-    showToast(`담당 학생 ${STUDENTS.length}명을 불러왔습니다`);
-  } catch (err) {
-    showToast('DB 불러오기 실패 — 캐시/CSV로 이용하세요');
-  }
-}
-
-function loadCachedDB() {
-  try {
-    const cached = JSON.parse(localStorage.getItem('mentCachedDB') || '[]');
-    if (Array.isArray(cached) && cached.length) {
-      ALL_STUDENTS = cached;
-      activateStudents();
-    }
-  } catch (e) {}
-}
-
-// ── 작성기록 저장/복원 (학생별 최신 멘트 + 발송여부) ──
-
-let RECORDS = {};  // { 학생명: { message, sent, updatedAt } }
-
-function recordsKey() { return 'mentRecords::' + currentUser; }
-
-function loadRecords() {
-  try { RECORDS = JSON.parse(localStorage.getItem(recordsKey()) || '{}'); }
-  catch (e) { RECORDS = {}; }
-}
-
-function persistRecords() {
-  localStorage.setItem(recordsKey(), JSON.stringify(RECORDS));
-}
-
-function getRecord(name) { return RECORDS[name] || null; }
-
-function saveRecord(name, fields) {
-  const prev = RECORDS[name] || { message: '', sent: false };
-  RECORDS[name] = {
-    message: fields.message != null ? fields.message : prev.message,
-    sent:    fields.sent    != null ? fields.sent    : prev.sent,
-    updatedAt: new Date().toISOString()
-  };
-  persistRecords();
-  pushRecord(name);
-}
-
-// 코다로 업로드 (n8n → POST)
-async function pushRecord(name) {
-  const rec = RECORDS[name];
-  if (!rec) return;
-  try {
-    await fetch(WEBHOOK_SAVE, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        선생님: currentUser,
-        학생명: name,
-        멘트: rec.message,
-        발송여부: !!rec.sent
-      })
-    });
-  } catch (e) { /* 오프라인이어도 로컬엔 저장됨 */ }
-}
-
-function toggleSent(name, checked) {
-  saveRecord(name, { sent: checked });
-}
-
-// 서버(코다)에서 작성기록 불러와 localStorage와 병합 (서버가 최신이면 덮어씀)
-async function loadServerRecords() {
-  if (!currentUser) return;
-  try {
-    const res = await fetch(`${WEBHOOK_RECORDS}?선생님=${encodeURIComponent(currentUser)}`);
-    const serverRecords = await res.json();
-    if (!serverRecords || typeof serverRecords !== 'object') return;
-    for (const [name, rec] of Object.entries(serverRecords)) {
-      if (!rec || typeof rec !== 'object') continue;
-      const local = RECORDS[name];
-      if (!local || !local.updatedAt || (rec.updatedAt && rec.updatedAt > local.updatedAt)) {
-        RECORDS[name] = rec;
-      }
-    }
-    persistRecords();
-    renderStudentList();
-    if (selectedIndex >= 0) {
-      const cur = STUDENTS[selectedIndex];
-      const r = cur && getRecord(cur.name);
-      if (r && r.message) {
-        document.getElementById('messageContent').textContent = r.message;
-        document.getElementById('messageArea').classList.remove('hidden');
-      }
-    }
-  } catch (e) { /* 서버 불가 시 localStorage 기록 그대로 사용 */ }
-}
-
-function getResultColor(result) {
-  if (result.includes('하락')) return { avatar: '#EF4444', badge: 'bg-red-50 text-red-500' };
-  if (result.includes('상승')) return { avatar: '#059669', badge: 'bg-emerald-50 text-emerald-600' };
-  return { avatar: '#D97706', badge: 'bg-amber-50 text-amber-600' };
-}
-function getResultLabel(r) {
-  if (r.includes('하락')) return '하락 예상';
-  if (r.includes('상승')) return '상승 예상';
-  return '유지 예상';
-}
-
-function renderStudentList() {
-  const list = document.getElementById('studentList');
-  const filtered = STUDENTS.filter(s => currentFilter === 'all' || s.expected_result.includes(currentFilter));
-
-  const down = STUDENTS.filter(s => s.expected_result.includes('하락')).length;
-  const mid  = STUDENTS.filter(s => s.expected_result.includes('유지')).length;
-  const up   = STUDENTS.filter(s => s.expected_result.includes('상승')).length;
-  document.getElementById('countDown').textContent = STUDENTS.length ? down : '-';
-  document.getElementById('countMid').textContent  = STUDENTS.length ? mid  : '-';
-  document.getElementById('countUp').textContent   = STUDENTS.length ? up   : '-';
-
-  const empty = document.getElementById('sidebarEmpty');
-  if (!STUDENTS.length) {
-    list.innerHTML = '';
-    if (empty) { list.appendChild(empty); empty.classList.remove('hidden'); }
-    return;
-  }
-  if (empty) empty.classList.add('hidden');
-
-  list.innerHTML = filtered.map(s => {
-    const ri = STUDENTS.indexOf(s);
-    const color = getResultColor(s.expected_result);
-    const active = ri === selectedIndex;
-    const rec = getRecord(s.name);
-    const sent = rec && rec.sent;
-    const hasMsg = rec && rec.message;
-    const safeName = s.name.replace(/'/g, "\\'");
-    return `<div class="sidebar-item mx-2 px-3 py-2.5 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${active ? 'active' : ''}" onclick="selectStudent(${ri})">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2.5 min-w-0">
-          <input type="checkbox" ${sent ? 'checked' : ''} title="발송 완료 체크"
-            onclick="event.stopPropagation(); toggleSent('${safeName}', this.checked); renderStudentList();"
-            class="w-4 h-4 shrink-0 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
-          <div class="min-w-0">
-            <div class="s-name text-sm truncate ${sent ? 'line-through text-gray-400' : (active ? 'text-blue-600 font-semibold' : 'text-gray-800 font-medium')}">${s.name}</div>
-            <div class="text-xs text-gray-400 flex items-center gap-1">
-              ${s.grade}${hasMsg ? '<iconify-icon icon="solar:document-text-bold-duotone" class="text-blue-400" style="font-size:11px;" title="작성기록 있음"></iconify-icon>' : ''}
-            </div>
-          </div>
-        </div>
-        <span class="px-1.5 py-0.5 rounded-full text-xs font-medium shrink-0 ${color.badge}">${getResultLabel(s.expected_result)}</span>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function filterStudents(type) {
-  currentFilter = type;
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    const a = btn.dataset.filter === type;
-    btn.className = `filter-btn flex-1 px-2 py-1 text-xs font-medium rounded-md transition-colors ${a ? 'bg-blue-50 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`;
-  });
-  renderStudentList();
-}
-
-function selectStudent(index) {
-  selectedIndex = index;
-  const s = STUDENTS[index];
-  const color = getResultColor(s.expected_result);
-  document.getElementById('emptyState').classList.add('hidden');
-  document.getElementById('allResults').classList.add('hidden');
-  document.getElementById('studentDetail').classList.remove('hidden');
-  document.getElementById('messageArea').classList.add('hidden');
-  document.getElementById('detailAvatar').style.backgroundColor = color.avatar;
-  document.getElementById('detailAvatar').textContent = s.name[0];
-  document.getElementById('detailName').textContent = s.name;
-  document.getElementById('detailGrade').textContent = s.grade;
-  const badge = document.getElementById('detailResultBadge');
-  badge.className = `px-2 py-0.5 rounded-full text-xs font-medium ${color.badge}`;
-  badge.textContent = getResultLabel(s.expected_result);
-  document.getElementById('detailSchedule').textContent = s.exam_schedule.replace(/\n/g,' ') || '미입력';
-  document.getElementById('detailPrep').textContent = s.prep_status || '미입력';
-  document.getElementById('detailPrevScore').textContent = s.prev_score.replace(/\n/g,' ') || '미입력';
-  document.getElementById('detailTargetScore').textContent = s.target_score || '미입력';
-  document.getElementById('detailScope').textContent = s.exam_scope.replace(/\n/g,' ') || '미입력';
-
-  // 이전 작성기록(최신 멘트) 복원
-  const rec = getRecord(s.name);
-  if (rec && rec.message) {
-    document.getElementById('messageContent').textContent = rec.message;
-    document.getElementById('messageArea').classList.remove('hidden');
-  }
-  renderStudentList();
-}
-
-function generateSingle() {
-  if (selectedIndex < 0) return;
-  const s = STUDENTS[selectedIndex];
-  const msg = generateMessage(s);
-  document.getElementById('messageContent').textContent = msg;
-  document.getElementById('messageArea').classList.remove('hidden');
-  document.getElementById('messageArea').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  saveRecord(s.name, { message: msg });  // 학생별 최신 멘트 저장 + 업로드
-  renderStudentList();
-}
-
-function generateAll() {
-  const toGen = currentFilter === 'all' ? STUDENTS : STUDENTS.filter(s => s.expected_result.includes(currentFilter));
-  if (!toGen.length) return;
-  if (!confirm(`현재 필터된 학생 ${toGen.length}명의 멘트를 모두 생성할까요?`)) return;
-  document.getElementById('emptyState').classList.add('hidden');
-  document.getElementById('studentDetail').classList.add('hidden');
-  const allResults = document.getElementById('allResults');
-  allResults.classList.remove('hidden');
-  const results = toGen.map(s => ({ student: s, message: generateMessage(s) }));
-  results.forEach(r => saveRecord(r.student.name, { message: r.message }));  // 일괄 저장 + 업로드
-  allResults.innerHTML = `
-    <div class="flex items-center justify-between mb-2">
-      <h2 class="text-base font-semibold text-gray-900">전체 생성 완료 <span class="text-gray-400 font-normal">(${results.length}명)</span></h2>
-      <button onclick="exportAll()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-        <iconify-icon icon="solar:export-bold-duotone" style="font-size:14px;"></iconify-icon>전체 복사
-      </button>
-    </div>
-    ${results.map(r => {
-      const color = getResultColor(r.student.expected_result);
-      return `<div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-        <div class="flex items-center justify-between mb-3">
-          <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold" style="background-color:${color.avatar}">${r.student.name[0]}</div>
-            <span class="text-sm font-semibold text-gray-900">${r.student.name}</span>
-            <span class="text-xs text-gray-400">${r.student.grade}</span>
-            <span class="px-2 py-0.5 rounded-full text-xs font-medium ${color.badge}">${getResultLabel(r.student.expected_result)}</span>
-          </div>
-          <button onclick="copyEl(this)" data-msg="${r.message.replace(/"/g,'&quot;').replace(/\n/g,'&#10;')}"
-            class="flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-            <iconify-icon icon="solar:copy-bold-duotone" style="font-size:13px;"></iconify-icon>복사
-          </button>
-        </div>
-        <div class="message-box text-sm text-gray-700 leading-relaxed bg-gray-50 rounded-xl p-4 border border-gray-100">${r.message.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
-      </div>`;
-    }).join('')}`;
-  window._allMsgs = results;
-  renderStudentList();
-}
-
-function copyEl(btn) {
-  const text = btn.getAttribute('data-msg').replace(/&quot;/g,'"').replace(/&#10;/g,'\n');
-  navigator.clipboard.writeText(text).then(() => {
-    const orig = btn.innerHTML;
-    btn.textContent = '복사됨';
-    setTimeout(() => btn.innerHTML = orig, 1500);
-  });
-}
-function copyMessage() {
-  const text = document.getElementById('messageContent').textContent;
-  navigator.clipboard.writeText(text).then(() => {
-    const btn = event.target.closest('button');
-    const orig = btn.innerHTML;
-    btn.innerHTML = '<iconify-icon icon="solar:check-circle-bold-duotone" style="font-size:14px;"></iconify-icon> 복사됨';
-    setTimeout(() => btn.innerHTML = orig, 1500);
-  });
-}
-function exportAll() {
-  if (!window._allMsgs) return;
-  const text = window._allMsgs.map(r =>
-    `=== ${r.student.name} (${r.student.grade}) - ${r.student.expected_result} ===\n\n${r.message}`
-  ).join('\n\n' + '─'.repeat(40) + '\n\n');
-  navigator.clipboard.writeText(text).then(() => showToast(`${window._allMsgs.length}명 전체 멘트가 복사되었습니다`));
-}
-
-// ── 샘플 데이터 ──────────────────────────────────
-
-function loadSampleData() {
-  const sampleCSV = `학생명,학년,시험 일정,시험범위,시험대비 현황,이전점수,목표점수,예상 결과
-강민지,고2,7월 1주차(6/29~7/3),삼각함수 활용~끝,개념 보충,,,성적 하락(부정)
-강한음,고2,6월 4-5주차(6/24-6/30),삼각함수 활용-끝,문제 풀이 위주,70,85,성적 유지(보통)
-강희,고1,7월 1주차(6/29~7/3),여러가지방정식~행렬,심화 문제 대비,70.1,75이상,성적 상승(긍정)
-김소와,고2,6/29 ~ 7/3,대수(천재전): 삼각함수의 그래프 ~,심화 문제 대비,71,80,성적 상승(긍정)
-박경주,고2,7월 1주차(7/1~7/7),수열단원만(3단원),실전 모의 평가,87,90,성적 유지(보통)
-이형직,고3,7월 1주차(6/29~7/3),미적분: 접선의 방정식,실전 모의 평가,64.4,80,성적 상승(긍정)
-팽준석,고2,6/29 ~ 7/3,대수(천재전): 삼각함수 활용 ~,문제 풀이 위주,86점 2등급,100,성적 하락(부정)`;
-  try {
-    ALL_STUDENTS = parseCSV(sampleCSV);
-    // 샘플엔 담당자 컬럼이 없으므로 현재 사용자 담당으로 지정해 표시
-    ALL_STUDENTS.forEach(s => { if (!s.owner) s.owner = currentUser; });
-    localStorage.setItem('mentCachedDB', JSON.stringify(ALL_STUDENTS));
-    activateStudents();
-    showToast(`샘플 데이터 ${STUDENTS.length}명이 불러와졌습니다`);
-  } catch(e) {}
-}
-
-// ── 토스트 알림 ──────────────────────────────────
-
-function showToast(msg) {
-  const t = document.createElement('div');
-  t.textContent = msg;
-  t.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-sm px-4 py-2.5 rounded-xl shadow-lg z-[100] transition-opacity';
-  document.body.appendChild(t);
-  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 2200);
-}
-
-// ── 초기화 ─────────────────────────────────────
-
-window.onload = () => {
-  loadRules();
-  renderStudentList();
-
-  const savedUser = localStorage.getItem('mentCurrentUser');
-  if (savedUser) {
-    currentUser = savedUser;
-    document.getElementById('currentUserLabel').textContent = savedUser + ' 선생님';
-    loadRecords();      // 작성기록 복원 (localStorage)
-    loadServerRecords();// 서버(코다)의 작성기록 병합 복원
-    loadCachedDB();     // 캐시된 DB 즉시 표시 → 새로고침/재접속에도 유지
-    refreshStudentDB(); // 서버 최신 DB 동기화
-  } else {
-    showLogin();
-  }
+/* ───────────────────── 수준 ───────────────────── */
+const LEVELS = [
+  { id:'advanced', label:'유형 이상', short:'유형↑' },
+  { id:'basic',    label:'연산·개념', short:'연산·개념' },
+];
+
+/* ───────────────────── 학년·범위·멘트 데이터 ─────────────────────
+   범위 옵션은 2025년 실제 학교별 시험범위 사례를 반영해 세분화.
+   · 고1 공통수학2: 평면좌표~집합(대전외고·인천포스코고·인천원당고·대전괴정고),
+     평면좌표~도형의 이동(현대고·단대부고), 집합~도형의 이동(휘문고)
+   · 고2 미적분Ⅰ형: 함수의 극한 ~ 접선의 방정식(휘문고·양재고·서초고)
+   · 중3: 삼각비 ~ 원과 직선(서울삼육중 등)
+   각 범위: label(드롭다운), lecture(특강명), rangeText, intro, levels, list, core, goal */
+
+/* ========== 고1 공통 블록 ========== */
+const H1_INTRO = (rangeText, extra) => `이번 시험범위(${rangeText})의 최대 난관은 도형의 방정식입니다. 공식 암기로는 풀리지 않고, 그림을 보고 쓸 성질을 스스로 찾아내는 힘이 필요합니다.${extra ? ' ' + extra : ''}`;
+
+const H1_LEVELS = {
+  advanced:`응용 문제는 평행선의 넓이비, 각의 이등분선 성질까지 엮여 나와 중등 기하가 탄탄해야 접근이 가능합니다.`,
+  basic:`공수2는 공수1의 계산력에 도형 감각까지 요구되어, 개념 이해에 그쳤다면 난도가 급히 올랐다고 느낍니다.`,
 };
+const H1_LIST = `① 도형·그래프 유형 반복 훈련
+② 풀이 방향을 잡는 사고 과정 훈련
+③ 타 학교 기출과 고난도 문제 대비`;
+const H1_LIST_SET = `① 도형·그래프 유형 반복 훈련
+② 집합·명제 빈출 유형 정리
+③ 타 학교 기출과 고난도 문제 대비`;
+const H1_EXTRA_SET = `여기에 집합까지 포함되어 새 기호·용어를 정확히 다루는 능력도 필요합니다.`;
+const H1_EXTRA_PROP = `여기에 집합과 명제까지 포함되어 진리집합·필요충분조건의 정확한 이해도 필요합니다.`;
+const H1_EXTRA_PROP_ALL = `여기에 명제의 증명·절대부등식까지 포함되며, 서술형 단골 포인트라 꼼꼼한 대비가 필요합니다.`;
+const h1Range = (id, label, rangeText, extra, list) => ({
+  id, label, rangeText,
+  lecture:'[고1 공통수학2 내신 대비 특강]',
+  core:'도형 파트', goal:'어떤 성질을 활용해야 하는지',
+  intro:H1_INTRO(rangeText, extra), list:list || H1_LIST, levels:H1_LEVELS,
+});
+
+/* ========== 중3 공통 블록 ========== */
+const M3_INTRO = (rangeText, extra) => `이번 시험범위(${rangeText})의 최대 난관은 삼각비입니다. 값을 외운다고 풀리지 않고, 그림에서 직각삼각형을 찾거나 보조선을 그어 만드는 힘이 필요합니다.${extra ? ' ' + extra : ''}`;
+const M3_LEVELS = {
+  advanced:`응용 문제는 삼각비에 닮음·피타고라스까지 엮여 나오고, 고1 도형의 방정식으로 이어집니다.`,
+  basic:`피타고라스나 무리수(√) 계산이 익숙하지 않으면 삼각비 값 구하기부터 막혀, 기본기부터 단계를 밟아야 합니다.`,
+};
+const M3_LIST_TRI = `① 삼각비·도형 유형 반복 훈련
+② 직각삼각형을 찾아 풀이 방향을 잡는 훈련
+③ 타 학교 기출과 고난도 문제 대비`;
+const M3_LIST_CIR = `① 삼각비·원의 성질 유형 반복 훈련
+② 직각삼각형과 보조선을 찾는 사고 훈련
+③ 타 학교 기출과 고난도 문제 대비`;
+
+/* ========== 고2 미적분Ⅰ 공통 블록 ========== */
+const H2M_INTRO = (rangeText, extra) => `이번 시험범위(${rangeText})의 최대 난관은 함수의 극한과 연속입니다. 대입으로 풀리지 않고, 그래프를 읽고 좌·우극한을 나누어 살피는 판단력이 필요합니다.${extra ? ' ' + extra : ''}`;
+const H2M_LEVELS = (withDiff) => ({
+  advanced:`응용 문제는 ${withDiff ? '극한·연속에 미분계수까지' : '극한과 연속 조건을'} 엮은 합답형·서술형이 많아 공식만으로는 풀리지 않습니다.`,
+  basic:`그래프 해석이나 식 변형이 익숙하지 않으면 극한부터 막혀, 기본기부터 단계를 밟아야 합니다.`,
+});
+
+/* ========== 고2 대수(지수·로그) 공통 블록 ========== */
+const H2A_INTRO = (rangeText, withTrig) => `이번 시험범위(${rangeText})의 최대 난관은 지수·로그함수입니다. 로그 계산은 한 번의 실수로 답이 틀어지고, 그래프의 이동과 조건 해석이 결합돼 접근 순서를 스스로 판단해야 합니다.${withTrig ? ' 여기에 삼각함수 그래프까지 포함됩니다.' : ''}`;
+const H2A_LEVELS = (withTrig) => ({
+  advanced:`응용 문제는 그래프에 대칭·닮음·넓이비를 엮거나 미지수의 범위를 묻는 등, 공식만으로는 풀리지 않습니다.`,
+  basic:`지수법칙이나 그래프 해석이 익숙하지 않으면 지수·로그부터 막혀, 로그 계산 같은 기본기부터 잡아야 합니다.`,
+});
+
+/* ========== 중2 공통 블록 (2022 개정 · 도형의 성질) ========== */
+const M2_INTRO = (rangeText, extra) => `이번 시험범위(${rangeText})의 최대 난관은 도형의 성질입니다. 그림에서 쓸 성질을 찾아 보조선을 긋는 힘과, 증명 서술형을 논리적으로 쓰는 연습이 필요합니다.${extra ? ' ' + extra : ''}`;
+const M2_LEVELS = {
+  advanced:`응용 문제는 성질에 합동·각도 추적·넓이 조건까지 엮여 나오고, 중3 닮음·삼각비로 이어집니다.`,
+  basic:`계산 중심이던 1학기와 달라, 중1 기본 도형과 합동이 약하면 성질을 적용하는 단계부터 막힙니다.`,
+};
+/* 닮음 포함 범위용 수준별 문단 — 닮음 비중 강화 */
+const M2_LEVELS_SIM = {
+  advanced:`특히 닮음은 겹친 도형에서 닮은 삼각형을 찾고 넓이비를 연결하는 문제가 변별력을 가르는 고난도로 출제됩니다.`,
+  basic:`닮음은 대응변을 짝지어 비례식을 세우는 기본기가 흔들리면 이후 문제 전체가 막히는 단원입니다.`,
+};
+const M2_LIST = (first) => `① ${first} 유형 반복 훈련
+② 쓸 성질·보조선 찾기와 증명 서술형 훈련
+③ 타 학교 기출과 고난도 문제 대비`;
+const M2_LIST_SIM = `① 도형의 성질·닮음 유형 반복 훈련
+② 닮은 삼각형 찾기와 증명 서술형 훈련
+③ 타 학교 기출과 고난도 문제 대비`;
+const m2Range = (id, label, rangeText, core, listFirst, extra, levels, list) => ({
+  id, label, rangeText, core,
+  lecture:'[중2 2학기 내신 대비 특강]', goal:'어떤 성질을 활용해야 하는지',
+  intro:M2_INTRO(rangeText, extra), list:list || M2_LIST(listFirst), levels:levels || M2_LEVELS,
+});
+
+/* ========== 중1 공통 블록 (2022 개정 · 기본 도형/평면도형) ========== */
+const M1_INTRO = (rangeText, extra) => `이번 시험범위(${rangeText})의 최대 난관은 도형입니다. 연산 중심이던 1학기와 달리 그림과 기호를 정확히 읽어야 하고, 용어·기호를 잘못 써 감점되는 경우도 많습니다.${extra ? ' ' + extra : ''}`;
+const M1_LEVELS = {
+  advanced:`응용 문제는 평행선·합동·넓이 조건까지 엮여 나오고, 중2 도형의 성질로 이어집니다.`,
+  basic:`처음 접하는 용어와 기호에서부터 막히는 학생이 많아, 기본 용어 정리부터 단계를 밟아야 합니다.`,
+};
+const M1_LIST = (first) => `① ${first} 유형 반복 훈련
+② 그림 속 조건 찾기와 용어·기호 서술형 훈련
+③ 타 학교 기출과 고난도 문제 대비`;
+const m1Range = (id, label, rangeText, core, listFirst, extra) => ({
+  id, label, rangeText, core,
+  lecture:'[중1 2학기 내신 대비 특강]', goal:'어떤 성질을 활용해야 하는지',
+  intro:M1_INTRO(rangeText, extra), list:M1_LIST(listFirst), levels:M1_LEVELS,
+});
+
+const GRADES = [
+
+/* ========================= 중1 ========================= */
+{ id:'m1', label:'중1', school:'middle', ranges:[
+  m1Range('m1r1', '기본 도형 ~ 작도와 합동', '기본 도형 ~ 작도와 합동',
+    '기본 도형·합동 파트', '기본 도형·작도와 합동'),
+  m1Range('m1r2', '기본 도형 ~ 다각형의 성질', '기본 도형 ~ 다각형의 성질',
+    '기본 도형·다각형 파트', '기본 도형·다각형',
+    '여기에 다각형까지 포함되어 내각·외각의 합으로 각을 추적하는 훈련도 필요합니다.'),
+  m1Range('m1r3', '기본 도형 ~ 원과 부채꼴', '기본 도형 ~ 원과 부채꼴',
+    '평면도형 파트', '기본 도형·평면도형',
+    '여기에 원과 부채꼴까지 포함되어 호의 길이·넓이 공식을 변형해 쓰는 능력도 요구됩니다.'),
+  m1Range('m1r4', '기본 도형 ~ 입체도형의 겉넓이와 부피', '기본 도형 ~ 입체도형의 겉넓이와 부피',
+    '평면도형·입체도형 파트', '평면도형·입체도형',
+    '여기에 입체도형까지 포함되어 겉넓이·부피를 구하는 공간 감각도 요구됩니다.'),
+  /* 1학기 마지막 단원(좌표평면과 그래프)부터 출제하는 학교용 */
+  m1Range('m1r5', '좌표평면과 그래프 ~ 작도와 합동 (1학기 단원 포함)', '좌표평면과 그래프 ~ 작도와 합동',
+    '기본 도형·합동 파트', '좌표평면·기본 도형·합동',
+    '여기에 1학기 마지막 단원인 좌표평면과 그래프까지 포함되어, 상황을 그래프로 읽는 훈련도 함께 필요합니다.'),
+  m1Range('m1r6', '좌표평면과 그래프 ~ 다각형의 성질 (1학기 단원 포함)', '좌표평면과 그래프 ~ 다각형의 성질',
+    '기본 도형·다각형 파트', '좌표평면·기본 도형·다각형',
+    '1학기 마지막 단원인 좌표평면과 그래프부터 다각형까지 걸치는 넓은 범위라 학습량 배분도 중요합니다.'),
+  m1Range('m1r7', '좌표평면과 그래프 ~ 원과 부채꼴 (1학기 단원 포함)', '좌표평면과 그래프 ~ 원과 부채꼴',
+    '평면도형 파트', '좌표평면·기본 도형·평면도형',
+    '1학기 마지막 단원인 좌표평면과 그래프부터 부채꼴까지 걸치는 넓은 범위라 학습량 배분도 중요합니다.'),
+]},
+
+/* ========================= 중2 ========================= */
+{ id:'m2', label:'중2', school:'middle', ranges:[
+  m2Range('m2r1', '이등변삼각형 ~ 평행사변형', '이등변삼각형 ~ 평행사변형',
+    '도형의 성질 파트', '삼각형·사각형의 성질'),
+  m2Range('m2r2', '이등변삼각형 ~ 여러 가지 사각형 (도형의 성질 전체)', '이등변삼각형 ~ 여러 가지 사각형',
+    '도형의 성질 파트', '삼각형·사각형의 성질'),
+  m2Range('m2r3', '이등변삼각형 ~ 도형의 닮음 (2025 단대부중 등)', '이등변삼각형 ~ 도형의 닮음',
+    '닮음 파트', '삼각형·사각형의 성질과 도형의 닮음',
+    `여기에 닮음까지 포함되는데, 배점 높은 고난도 문제는 대부분 닮음에서 출제됩니다.`,
+    M2_LEVELS_SIM, M2_LIST_SIM),
+  m2Range('m2r4', '이등변삼각형 ~ 여러 가지 사각형 + 피타고라스 정리 (2025 역삼중 등)', '이등변삼각형 ~ 여러 가지 사각형, 피타고라스 정리',
+    '도형의 성질·피타고라스 파트', '도형의 성질·피타고라스',
+    '여기에 피타고라스 정리까지 포함되어 계산 정확성도 함께 요구됩니다.'),
+]},
+
+/* ========================= 중3 ========================= */
+{ id:'m3', label:'중3', school:'middle', ranges:[
+  { id:'m3r1', label:'삼각비 ~ 삼각비의 활용',
+    lecture:'[중3 2학기 내신 대비 특강]', rangeText:'삼각비 ~ 삼각비의 활용',
+    core:'삼각비 파트', goal:'어떤 성질을 활용해야 하는지',
+    intro:M3_INTRO('삼각비 ~ 삼각비의 활용'), list:M3_LIST_TRI, levels:M3_LEVELS },
+  { id:'m3r2', label:'삼각비 ~ 원과 직선 (2025 서울삼육중 등)',
+    lecture:'[중3 2학기 내신 대비 특강]', rangeText:'삼각비 ~ 원의 성질(원과 직선)',
+    core:'삼각비·원의 성질 파트', goal:'어떤 성질을 활용해야 하는지',
+    intro:M3_INTRO('삼각비 ~ 원의 성질(원과 직선)', '여기에 원의 성질까지 포함되어 현·접선 성질을 그림에 적용하는 연습도 필요합니다.'),
+    list:M3_LIST_CIR, levels:M3_LEVELS },
+  { id:'m3r3', label:'삼각비 ~ 원주각 (원의 성질 전체)',
+    lecture:'[중3 2학기 내신 대비 특강]', rangeText:'삼각비 ~ 원의 성질(원과 직선, 원주각)',
+    core:'삼각비·원의 성질 파트', goal:'어떤 성질을 활용해야 하는지',
+    intro:M3_INTRO('삼각비 ~ 원의 성질(원과 직선, 원주각)', '여기에 원의 성질 전체가 포함되어 접선의 길이·원주각까지 적용하는 연습이 필요합니다.'),
+    list:M3_LIST_CIR, levels:M3_LEVELS },
+]},
+
+/* ========================= 고1 ========================= */
+{ id:'h1', label:'고1', school:'high', ranges:[
+  h1Range('h1r1', '평면좌표 ~ 원의 방정식', '평면좌표 ~ 원의 방정식'),
+  h1Range('h1r2', '평면좌표 ~ 도형의 이동 (2025 현대고·단대부고 등)', '평면좌표 ~ 도형의 이동'),
+  h1Range('h1r3', '평면좌표 ~ 집합 (2025 대전외고·인천포스코고 등)', '평면좌표 ~ 집합', H1_EXTRA_SET, H1_LIST_SET),
+  h1Range('h1r4', '평면좌표 ~ 명제 (절대부등식 전)', '평면좌표 ~ 명제(절대부등식 전)', H1_EXTRA_PROP, H1_LIST_SET),
+  h1Range('h1r5', '평면좌표 ~ 집합과 명제 전체 (절대부등식 포함)', '평면좌표 ~ 집합과 명제 전체', H1_EXTRA_PROP_ALL, H1_LIST_SET),
+  h1Range('h1r6', '집합 ~ 도형의 이동 (단원 순서 재배열, 2025 휘문고)', '집합 ~ 도형의 이동', H1_EXTRA_SET, H1_LIST_SET),
+]},
+
+/* ========================= 고2 ========================= */
+{ id:'h2', label:'고2', school:'high', ranges:[
+  { id:'h2r1', label:'미적분Ⅰ · 함수의 극한 ~ 함수의 연속',
+    lecture:'[고2 미적분Ⅰ 내신 대비 특강]', rangeText:'함수의 극한 ~ 함수의 연속',
+    core:'극한·연속 파트', goal:'어떤 개념과 조건을 활용해야 하는지',
+    intro:H2M_INTRO('함수의 극한 ~ 함수의 연속'),
+    list:`① 극한·연속 유형 반복 훈련
+② 그래프와 조건을 읽고 풀이 방향을 잡는 훈련
+③ 타 학교 기출과 고난도 문제 대비`,
+    levels:H2M_LEVELS(false) },
+  { id:'h2r2', label:'미적분Ⅰ · 함수의 극한 ~ 미분계수와 도함수',
+    lecture:'[고2 미적분Ⅰ 내신 대비 특강]', rangeText:'함수의 극한 ~ 미분계수와 도함수',
+    core:'극한·미분 파트', goal:'어떤 개념과 조건을 활용해야 하는지',
+    intro:H2M_INTRO('함수의 극한 ~ 미분계수와 도함수'),
+    list:`① 극한·연속·미분계수 유형 반복 훈련
+② 그래프와 조건을 읽고 풀이 방향을 잡는 훈련
+③ 타 학교 기출과 고난도 문제 대비`,
+    levels:H2M_LEVELS(true) },
+  { id:'h2r3', label:'미적분Ⅰ · 함수의 극한 ~ 접선의 방정식 (2025 휘문고·양재고·서초고)',
+    lecture:'[고2 미적분Ⅰ 내신 대비 특강]', rangeText:'함수의 극한 ~ 도함수의 활용(접선의 방정식)',
+    core:'극한·미분 파트', goal:'어떤 개념과 조건을 활용해야 하는지',
+    intro:H2M_INTRO('함수의 극한 ~ 도함수의 활용(접선의 방정식)', '여기에 접선의 방정식까지 포함되어 미분 계산의 정확성과 속도도 요구됩니다.'),
+    list:`① 극한·미분·접선의 방정식 유형 반복 훈련
+② 그래프와 조건을 읽고 풀이 방향을 잡는 훈련
+③ 타 학교 기출과 고난도 문제 대비`,
+    levels:H2M_LEVELS(true) },
+  { id:'h2r4', label:'대수 · 지수와 로그 ~ 지수함수와 로그함수의 활용',
+    lecture:'[고2 대수 내신 대비 특강]', rangeText:'지수와 로그 ~ 지수함수와 로그함수의 활용',
+    core:'지수·로그 파트', goal:'어떤 개념과 조건을 활용해야 하는지',
+    intro:H2A_INTRO('지수와 로그 ~ 지수함수와 로그함수의 활용', false),
+    list:`① 지수·로그 유형 반복 훈련
+② 그래프와 조건을 읽고 풀이 방향을 잡는 훈련
+③ 타 학교 기출과 고난도 문제 대비`,
+    levels:H2A_LEVELS(false) },
+  { id:'h2r5', label:'대수 · 지수와 로그 ~ 삼각함수의 그래프',
+    lecture:'[고2 대수 내신 대비 특강]', rangeText:'지수와 로그 ~ 삼각함수의 그래프',
+    core:'지수·로그 파트', goal:'어떤 개념과 조건을 활용해야 하는지',
+    intro:H2A_INTRO('지수와 로그 ~ 삼각함수의 그래프', true),
+    list:`① 지수·로그·삼각함수 유형 반복 훈련
+② 그래프와 조건을 읽고 풀이 방향을 잡는 훈련
+③ 타 학교 기출과 고난도 문제 대비`,
+    levels:H2A_LEVELS(true) },
+  { id:'h2r6', label:'대수 · 삼각함수 ~ 등차수열과 등비수열 (연간 편성 학교)',
+    lecture:'[고2 대수 내신 대비 특강]', rangeText:'삼각함수 ~ 등차수열과 등비수열',
+    core:'삼각함수·수열 파트', goal:'어떤 개념과 성질을 활용해야 하는지',
+    intro:`이번 시험범위(삼각함수 ~ 등차수열과 등비수열)의 최대 난관은 삼각함수입니다. 주기와 최대·최소가 달라지는 그래프를 읽고 사인·코사인법칙 중 무엇을 쓸지 스스로 판단해야 하며, 수열은 조건에서 규칙을 찾아 식으로 옮기는 훈련이 필요합니다.`,
+    list:`① 삼각함수 그래프·수열 유형 반복 훈련
+② 사인·코사인법칙 도형 활용 응용 훈련
+③ 타 학교 기출과 고난도 문제 대비`,
+    levels:{
+      advanced:`응용 문제는 그래프에 대칭성·주기성을 엮거나 수열의 규칙을 일반화해야 해, 공식만으로는 풀리지 않습니다.`,
+      basic:`그래프 해석이나 문자 계산이 익숙하지 않으면 규칙을 식으로 옮기는 단계부터 막혀, 기본 계산부터 잡아야 합니다.`,
+    } },
+  { id:'h2r7', label:'확률과 통계 · 순열과 조합 ~ 확률의 뜻과 활용',
+    lecture:'[고2 확률과 통계 내신 대비 특강]', rangeText:'순열과 조합 ~ 확률의 뜻과 활용',
+    core:'순열·조합 파트', goal:'어떤 기준으로 세어야 하는지',
+    intro:`이번 시험범위(순열과 조합 ~ 확률의 뜻과 활용)의 최대 난관은 경우의 수입니다. 공식 대입으로는 풀리지 않고, 무엇을 기준으로 나누어 셀지 스스로 판단해야 합니다. 기준을 잘못 잡으면 중복해 세거나 빠뜨려 풀고도 틀리게 됩니다.`,
+    list:`① 상황별 순열·조합 유형 반복 훈련
+② 세는 기준을 세워 풀이 방향을 잡는 훈련
+③ 타 학교 기출과 고난도 문제 대비`,
+    levels:{
+      advanced:`응용 문제는 상황을 케이스로 나누거나 여사건·조건부확률을 함께 써야 해, 공식만으로는 풀리지 않습니다.`,
+      basic:`계산은 어렵지 않아 만만해 보이지만, 세는 기준 없이 풀어온 학생일수록 점수가 안정되지 않습니다.`,
+    } },
+]},
+];
+
+/* ───────────────────── 메시지 조립 ───────────────────── */
+const DOUBLE_SURNAMES = ['남궁','제갈','선우','독고','황보','사공','서문','어금','강전','망절'];
+function givenName(raw){
+  // "583-47149고건영"처럼 학번·기호가 섞여 있으면 마지막 한글 덩어리를 성+이름으로 간주
+  const runs = raw.match(/[가-힣]+/g);
+  if (!runs) return raw;
+  const name = runs[runs.length - 1];
+  // 성을 떼고 이름만: 3글자 → 뒤 2글자(박수민 → 수민), 2글자 → 뒤 1글자(고은 → 은)
+  if (name.length >= 4) return DOUBLE_SURNAMES.includes(name.slice(0, 2)) ? name.slice(2) : name.slice(1);
+  if (name.length >= 2) return name.slice(1);
+  return name;
+}
+function josaName(name){
+  // 받침 있으면 '이' 붙여 부르기: 수민 → 수민이, 창세 → 창세
+  const ch = name.charCodeAt(name.length - 1);
+  if (ch >= 0xAC00 && ch <= 0xD7A3 && (ch - 0xAC00) % 28 > 0) return name + '이';
+  return name;
+}
+function buildMessage(o){
+  // o: {teacher, grade, range, level, payUrl, student}
+  const r = o.range;
+  const lv = r.levels[o.level];
+  const stu = josaName(givenName(o.student || 'OO'));
+  return `안녕하세요, 학부모님. 밀당PT 수학 ${o.teacher || '000'} 선생님입니다.
+${r.lecture}이 개설되었습니다.
+
+${r.intro}
+
+${lv}
+
+특강에서는
+${r.list}
+
+를 통해 "${r.goal}"를 빠르게 판단하는 힘을 길러드립니다.
+
+${stu}의 효과적인 시험대비를 위해 특강 신청 링크 안내드립니다!
+${o.payUrl}`;
+}
+
+/* ───────────────────── 상태 ───────────────────── */
+const LS_KEY = 'mildang-teukgang-v3';
+const DEFAULT_RANGES = { m1:'m1r3', m2:'m2r2', m3:'m3r1', h1:'h1r2', h2:'h2r3' };
+let state = {
+  teacher:'', gradeId:'h1',
+  rangeByGrade:Object.assign({}, DEFAULT_RANGES),
+  level:'advanced', payId:{ high:'hw', middle:'mw' },
+  students:[], selected:0, namesRaw:'',
+};
+try{
+  const saved = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
+  if (saved && typeof saved === 'object'){
+    state = Object.assign(state, saved);
+    state.rangeByGrade = Object.assign({}, DEFAULT_RANGES, saved.rangeByGrade);
+    state.payId = Object.assign({high:'hw',middle:'mw'}, saved.payId);
+    if(!Array.isArray(state.students)) state.students = [];
+  }
+}catch(e){ /* storage unavailable — run in memory */ }
+function save(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){} }
+
+const grade = () => GRADES.find(g => g.id === state.gradeId) || GRADES[1];
+const range = () => { const g = grade(); return g.ranges.find(r => r.id === state.rangeByGrade[g.id]) || g.ranges[0]; };
+const payOpt = () => { const g = grade(); const opts = PAY_LINKS[g.school]; return opts.find(p => p.id === state.payId[g.school]) || opts[0]; };
+const stuLevel = s => s.level || state.level;
+const lvLabel = id => (LEVELS.find(l => l.id === id) || LEVELS[0]).label;
+const lvShort = id => (LEVELS.find(l => l.id === id) || LEVELS[0]).short;
+
+function msgFor(s){
+  return buildMessage({
+    teacher: state.teacher.trim(), grade: grade(), range: range(),
+    level: stuLevel(s), payUrl: payOpt().url, student: s.name,
+  });
+}
+
+/* ───────────────────── 렌더 ───────────────────── */
+const $ = id => document.getElementById(id);
+const esc = t => t.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function renderSegs(){
+  const sg = $('segGrade'); sg.innerHTML = '';
+  GRADES.forEach(g => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = g.label;
+    b.className = g.id === state.gradeId ? 'on' : '';
+    b.onclick = () => { state.gradeId = g.id; resetCopied(false); save(); renderAll(); };
+    sg.appendChild(b);
+  });
+  const sl = $('segLevel'); sl.innerHTML = '';
+  LEVELS.forEach(l => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = l.label;
+    b.className = l.id === state.level ? 'on' : '';
+    b.onclick = () => { state.level = l.id; resetCopied(false); save(); renderAll(); };
+    sl.appendChild(b);
+  });
+}
+function renderSelects(){
+  const g = grade();
+  const sr = $('selRange'); sr.innerHTML = '';
+  g.ranges.forEach(r => {
+    const op = document.createElement('option');
+    op.value = r.id; op.textContent = r.label;
+    if (r.id === state.rangeByGrade[g.id]) op.selected = true;
+    sr.appendChild(op);
+  });
+  const sp = $('selPay'); sp.innerHTML = '';
+  PAY_LINKS[g.school].forEach(p => {
+    const op = document.createElement('option');
+    op.value = p.id; op.textContent = p.label;
+    if (p.id === state.payId[g.school]) op.selected = true;
+    sp.appendChild(op);
+  });
+}
+function renderRoster(){
+  const box = $('roster'); box.innerHTML = '';
+  if (!state.students.length){
+    box.innerHTML = '<div class="empty">왼쪽에 학생 명단을 붙여넣고<br>「명단 적용」을 누르세요.</div>';
+  }
+  state.students.forEach((s, i) => {
+    const row = document.createElement('div');
+    row.className = 'stu' + (i === state.selected ? ' sel' : '');
+    row.innerHTML = `<span class="nm">${s.copied ? '<span class="done">✓</span>' : ''}${esc(s.name)}</span>`;
+    row.onclick = () => { state.selected = i; save(); renderRoster(); renderPreview(); };
+
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'chip' + (stuLevel(s) === 'basic' ? ' basic' : '');
+    chip.textContent = lvShort(stuLevel(s));
+    chip.title = '클릭하여 이 학생의 수준 변경';
+    chip.onclick = e => {
+      e.stopPropagation();
+      s.level = stuLevel(s) === 'advanced' ? 'basic' : 'advanced';
+      s.copied = false; save(); renderRoster(); renderPreview();
+    };
+    row.appendChild(chip);
+
+    const cp = document.createElement('button');
+    cp.type = 'button'; cp.className = 'btn small';
+    cp.textContent = s.copied ? '재복사' : '복사';
+    cp.onclick = e => { e.stopPropagation(); state.selected = i; copyText(msgFor(s), () => { s.copied = true; save(); renderRoster(); renderPreview(); toast(`${s.name} 메시지 복사됨`); }); };
+    row.appendChild(cp);
+    box.appendChild(row);
+  });
+  $('cntAll').textContent = state.students.length;
+  $('cntDone').textContent = state.students.filter(s => s.copied).length;
+}
+function renderPreview(){
+  const s = state.students[state.selected] || { name:'OO' };
+  $('pvName').textContent = s.name === 'OO' ? '미리보기 (학생 미선택)' : s.name;
+  const tags = [grade().label, lvLabel(stuLevel(s)), range().rangeText, payOpt().label];
+  $('pvTags').innerHTML = tags.map(t => `<span>${esc(t)}</span>`).join('');
+  $('pvMsg').textContent = msgFor(s);
+}
+function renderAll(){ renderSegs(); renderSelects(); renderRoster(); renderPreview(); $('teacher').value = state.teacher; if(document.activeElement !== $('taNames')) $('taNames').value = state.namesRaw; }
+
+function resetCopied(rerender){
+  state.students.forEach(s => s.copied = false);
+  if (rerender !== false){ save(); renderRoster(); renderPreview(); }
+}
+
+/* ───────────────────── 복사 ───────────────────── */
+function copyText(text, ok){
+  const fallback = () => {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta); ta.select();
+    let done = false;
+    try{ done = document.execCommand('copy'); }catch(e){}
+    document.body.removeChild(ta);
+    if (done) ok(); else toast('복사에 실패했습니다. 미리보기에서 직접 선택해 주세요.');
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(ok, fallback);
+  } else fallback();
+}
+let toastTimer = null;
+function toast(msg){
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+/* ───────────────────── 이벤트 ───────────────────── */
+$('teacher').addEventListener('input', e => { state.teacher = e.target.value; save(); renderPreview(); });
+$('selRange').addEventListener('change', e => { state.rangeByGrade[grade().id] = e.target.value; resetCopied(false); save(); renderAll(); });
+$('selPay').addEventListener('change', e => { state.payId[grade().school] = e.target.value; save(); renderPreview(); });
+$('taNames').addEventListener('input', e => { state.namesRaw = e.target.value; save(); });
+$('btnApply').addEventListener('click', () => {
+  const names = state.namesRaw.split(/[\n,、·;]+/).map(t => t.trim()).filter(Boolean);
+  const seen = new Set(); const uniq = [];
+  names.forEach(n => { if(!seen.has(n)){ seen.add(n); uniq.push(n); } });
+  const old = new Map(state.students.map(s => [s.name, s]));
+  state.students = uniq.map(n => old.get(n) || { name:n, level:null, copied:false });
+  state.selected = 0; save(); renderRoster(); renderPreview();
+  toast(`${uniq.length}명 적용됨`);
+});
+$('btnClear').addEventListener('click', () => {
+  state.namesRaw = ''; state.students = []; state.selected = 0; save(); renderAll();
+});
+$('btnResetCopied').addEventListener('click', () => resetCopied());
+$('btnCopy').addEventListener('click', () => {
+  const s = state.students[state.selected];
+  const text = msgFor(s || { name:'OO' });
+  copyText(text, () => {
+    if (s){ s.copied = true; save(); renderRoster(); }
+    toast(s ? `${s.name} 메시지 복사됨` : '메시지 복사됨');
+  });
+});
+
+renderAll();
 </script>
 </body>
 </html>
