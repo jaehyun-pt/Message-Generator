@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>밀당PT 특강 멘트 생성기</title>
+<title>밀당PT 기말 특강 멘트 생성기</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=Hahmlet:wght@600;700&display=swap">
 <style>
   :root{
@@ -47,7 +47,7 @@
   header.app .sub{color:var(--muted); font-size:13px}
   .wrap{
     max-width:1400px; margin:0 auto; padding:16px 24px 40px;
-    display:grid; grid-template-columns:330px 300px 1fr; gap:16px; align-items:start;
+    display:grid; grid-template-columns:300px 430px 1fr; gap:16px; align-items:start;
   }
   @media (max-width:1080px){ .wrap{grid-template-columns:320px 1fr} .col-preview{grid-column:1 / -1} }
   @media (max-width:720px){ .wrap{grid-template-columns:1fr} .col-preview{grid-column:auto} }
@@ -115,6 +115,13 @@
     padding:16px 18px; max-height:560px; overflow-y:auto; line-height:1.75; font-size:13.5px;
   }
   .pv-actions{display:flex; gap:8px; margin-left:auto}
+  .msg-edit{
+    width:100%; font:inherit; color:var(--ink); white-space:pre-wrap;
+    background:var(--surface2); border:1px solid var(--accent); border-radius:8px;
+    padding:16px 18px; min-height:480px; line-height:1.75; font-size:13.5px; resize:vertical;
+  }
+  .pv-edit-actions{display:flex; gap:8px; margin-top:10px}
+  code{background:var(--surface2); border:1px solid var(--line); border-radius:4px; padding:0 4px; font-size:11px}
   .toast{
     position:fixed; left:50%; bottom:28px; transform:translateX(-50%) translateY(8px);
     background:var(--ink); color:var(--bg); padding:9px 18px; border-radius:999px;
@@ -122,547 +129,247 @@
   }
   .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
   @media (prefers-reduced-motion: reduce){ .toast{transition:none} }
+
+  .stu{flex-wrap:nowrap}
+  .stu select{width:auto; flex:0 0 190px; padding:4px 6px; font-size:12px; background:var(--surface)}
+  .stu select.on{border-color:var(--accent); color:var(--accent); font-weight:500; background:var(--accent-soft)}
+  .stu input.own{flex:0 0 190px; padding:4px 6px; font-size:12px; border-color:var(--accent)}
+  .sum{display:flex; gap:6px; font-size:12px; color:var(--muted); padding:0 16px 10px}
+  .sum span{border:1px solid var(--line); border-radius:999px; padding:1px 9px; background:var(--surface2)}
+  .sum b{color:var(--accent)}
+  .len{font-size:12px; color:var(--muted); margin-top:8px}
+  mark{background:var(--accent-soft); color:var(--accent); border-radius:3px; padding:0 2px}
 </style>
 </head>
 <body>
 <header class="app">
-  <h1>특강 멘트 생성기</h1>
-  <span class="sub">2026 수학 2학기 중간고사 대비 · 학부모 안내 메시지</span>
+  <h1>기말 특강 멘트 생성기</h1>
+  <span class="sub">2026 수학 2학기 기말고사 대비 · 학부모 짧은 안내 메시지</span>
 </header>
-
 <div class="wrap">
-
-  <!-- ══════════ 설정 ══════════ -->
   <div class="col-set">
-    <div class="card">
-      <div class="hd">기본 설정</div>
-      <div class="bd">
-        <label class="f">
-          <span class="lab">선생님 이름</span>
-          <input type="text" id="teacher" placeholder="예: 김민지" autocomplete="off">
-        </label>
-        <div class="f">
-          <span class="lab">학년</span>
-          <div class="seg" id="segGrade" role="group" aria-label="학년"></div>
-        </div>
-        <label class="f">
-          <span class="lab">시험범위</span>
-          <select id="selRange"></select>
-          <p class="hint">학교 시험 공지에 맞는 범위를 선택하세요.</p>
-        </label>
-        <div class="f">
-          <span class="lab">기본 수준 (학생별로 개별 변경 가능)</span>
-          <div class="seg" id="segLevel" role="group" aria-label="수준"></div>
-        </div>
-        <label class="f">
-          <span class="lab">특강 신청(결제) 링크</span>
-          <select id="selPay"></select>
-        </label>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="hd">학생 명단</div>
-      <div class="bd">
-        <label class="f">
-          <span class="lab">이름을 줄바꿈 또는 쉼표로 구분해 붙여넣기 (50명 이상 가능)</span>
-          <textarea id="taNames" placeholder="김서준&#10;이하윤&#10;박도현, 최지우, 정시우 …"></textarea>
-        </label>
-        <div style="display:flex; gap:8px">
-          <button class="btn primary" id="btnApply" style="flex:1">명단 적용</button>
-          <button class="btn" id="btnClear">비우기</button>
-        </div>
-        <p class="hint">명단은 이 페이지에 저장되어 다음에 열어도 유지됩니다.</p>
-      </div>
-    </div>
+    <div class="card"><div class="hd">기본 설정</div><div class="bd">
+      <label class="f"><span class="lab">선생님 이름</span><input type="text" id="teacher" placeholder="예: 김민지" autocomplete="off"></label>
+      <div class="f"><span class="lab">학년</span><div class="seg" id="segGrade" role="group" aria-label="학년"></div></div>
+      <p class="hint">학생마다 오른쪽 목록에서 <b>취약 단원</b>을 고르면 맞춤 문장 한 줄이 들어갑니다. 고르지 않으면 공통 문장이 들어가요.</p>
+    </div></div>
+    <div class="card"><div class="hd">학생 명단</div><div class="bd">
+      <label class="f"><span class="lab">이름을 줄바꿈 또는 쉼표로 구분해 붙여넣기</span>
+        <textarea id="taNames" placeholder="김서준&#10;이하윤&#10;박도현, 최지우 …"></textarea></label>
+      <div style="display:flex; gap:8px"><button class="btn primary" id="btnApply" style="flex:1">명단 적용</button><button class="btn" id="btnClear">비우기</button></div>
+      <p class="hint">명단과 선택한 취약 단원은 이 페이지에 저장되어 다음에 열어도 유지됩니다.</p>
+    </div></div>
   </div>
 
-  <!-- ══════════ 학생 목록 ══════════ -->
   <div class="card col-list">
     <div class="roster-head">
       <div><b id="cntDone">0</b><span style="color:var(--muted)"> / </span><b id="cntAll">0</b><span style="color:var(--muted)"> 복사됨</span></div>
       <button class="btn small" id="btnResetCopied">복사 표시 초기화</button>
     </div>
+    <div class="sum" id="sum"></div>
     <div class="roster" id="roster"></div>
   </div>
 
-  <!-- ══════════ 미리보기 ══════════ -->
   <div class="card col-preview">
     <div class="pv-head">
       <span class="who" id="pvName">미리보기</span>
       <div class="pv-tags" id="pvTags"></div>
-      <div class="pv-actions">
-        <button class="btn primary" id="btnCopy">이 메시지 복사</button>
-      </div>
+      <div class="pv-actions"><button class="btn" id="btnEdit">멘트 편집</button><button class="btn primary" id="btnCopy">이 메시지 복사</button></div>
     </div>
     <div class="pv-body">
       <pre class="msg" id="pvMsg"></pre>
+      <p class="len" id="pvLen"></p>
+      <div id="editPanel" hidden>
+        <p class="hint" style="margin:0 0 8px">학년별 기본 멘트를 수정합니다. 저장하면 이 학년의 모든 학생에게 적용됩니다.<br>
+        <code>{선생님}</code> <code>{학생}</code> <code>{맞춤문장}</code>은 복사할 때 실제 내용으로 바뀌니 그대로 두세요. <code>{맞춤문장}</code> 자리에 취약 단원 문장(또는 공통 문장)이 들어갑니다.</p>
+        <textarea id="editArea" class="msg-edit" spellcheck="false" style="min-height:320px"></textarea>
+        <div class="pv-edit-actions"><button class="btn primary" id="btnEditSave">저장</button><button class="btn" id="btnEditCancel">취소</button><button class="btn" id="btnEditDefault">기본 멘트 불러오기</button></div>
+      </div>
     </div>
   </div>
 </div>
-
 <div class="toast" id="toast" role="status"></div>
-
 <script>
 'use strict';
 
-/* ───────────────────── 링크 ───────────────────── */
-const PAY_LINKS = {
-  high: [
-    { id:'hw', label:'고등 주말', url:'https://payment.mildang.kr/VRis-2j9U1gincVs5l-6-' },
-    { id:'hd', label:'고등 주간', url:'https://payment.mildang.kr/bpye0i9cFtgsIQXuidTUJ' },
+/* ───── 취약 단원 (유형 중심 문장) ─────
+   phrase 뒤에 "을/를 조금 더 연습하면 좋을 것 같아" 가 붙습니다. */
+const WEAK = {
+  m1: [
+    { id:'angle',   label:'기본 도형 · 평행선 각도', phrase:'평행선과 각의 크기를 구하는 문제' },
+    { id:'congr',   label:'작도와 합동 · 합동 조건', phrase:'삼각형의 합동 조건을 판별하는 문제' },
+    { id:'poly',    label:'다각형 · 내각·외각',     phrase:'다각형의 내각·외각을 구하는 문제' },
+    { id:'sector',  label:'원과 부채꼴',            phrase:'부채꼴의 호의 길이와 넓이를 구하는 문제' },
+    { id:'solid',   label:'입체도형 · 겉넓이·부피',  phrase:'입체도형의 겉넓이와 부피를 구하는 문제' },
+    { id:'net',     label:'입체도형 · 전개도·회전체', phrase:'전개도와 회전체를 이용하는 문제' },
+    { id:'stat',    label:'자료의 정리와 해석',       phrase:'도수분포표와 그래프를 해석하는 문제' },
   ],
-  middle: [
-    { id:'mw', label:'중등 주말', url:'https://payment.mildang.kr/eB1XiJiIXdtX9LK6G722h' },
-    { id:'md', label:'중등 주간', url:'https://payment.mildang.kr/yymmlIfBt2-my3RUEWXSR' },
+  m2: [
+    { id:'tri',     label:'삼각형의 성질 · 외심·내심', phrase:'삼각형의 외심과 내심을 활용하는 문제' },
+    { id:'quad',    label:'사각형의 성질',          phrase:'여러 가지 사각형의 성질을 활용하는 문제' },
+    { id:'sim',     label:'도형의 닮음 · 닮음비·넓이비', phrase:'닮음비와 넓이의 비를 활용하는 문제' },
+    { id:'ratio',   label:'평행선과 선분의 길이의 비', phrase:'평행선을 이용해 선분의 길이를 구하는 문제' },
+    { id:'pyth',    label:'피타고라스 정리',         phrase:'피타고라스 정리로 길이를 구하는 문제' },
+    { id:'prob',    label:'경우의 수와 확률',        phrase:'경우의 수와 확률을 구하는 문제' },
+  ],
+  common: [
+    { id:'apply',   label:'(공통) 응용 문제 적용',    phrase:'배운 개념을 응용 문제에 적용하는 연습' },
+    { id:'calc',    label:'(공통) 계산 실수',        phrase:'계산 과정에서 실수를 줄이는 연습' },
   ],
 };
+const GRADES = [ { id:'m1', label:'중1' }, { id:'m2', label:'중2' } ];
 
-/* ───────────────────── 수준 ───────────────────── */
-const LEVELS = [
-  { id:'advanced', label:'유형 이상', short:'유형↑' },
-  { id:'basic',    label:'연산·개념', short:'연산·개념' },
-];
+const DEFAULT_TPL = `안녕하세요, 어머님 😊 밀당PT 수학 {선생님} 선생님입니다.
+2학기 기말고사를 앞두고 내신 대비 특강 안내드립니다.
 
-/* ───────────────────── 학년·범위·멘트 데이터 ─────────────────────
-   범위 옵션은 2025년 실제 학교별 시험범위 사례를 반영해 세분화.
-   · 고1 공통수학2: 평면좌표~집합(대전외고·인천포스코고·인천원당고·대전괴정고),
-     평면좌표~도형의 이동(현대고·단대부고), 집합~도형의 이동(휘문고)
-   · 고2 미적분Ⅰ형: 함수의 극한 ~ 접선의 방정식(휘문고·양재고·서초고)
-   · 중3: 삼각비 ~ 원과 직선(서울삼육중 등)
-   각 범위: label(드롭다운), lecture(특강명), rangeText, intro, levels, list, core, goal */
+이번 특강은 정규 수업에서 배운 내용을 바탕으로, 시험에서 어려움을 겪는 단원과 유형을 추가로 연습하는 과정입니다.
+{맞춤문장}
 
-/* ========== 고1 공통 블록 ========== */
-const H1_INTRO = (rangeText, extra) => `이번 시험범위(${rangeText})의 최대 난관은 도형의 방정식입니다. 공식 암기로는 풀리지 않고, 그림을 보고 쓸 성질을 스스로 찾아내는 힘이 필요합니다.${extra ? ' ' + extra : ''}`;
+자세한 내용은 안내문 참고 부탁드리며, 아래 중 편하신 번호로 말씀해 주세요.
+① 특강 참여를 희망합니다.
+② 자세한 안내를 받고 결정하고 싶습니다.
+③ 이번에는 참여하지 않겠습니다.
 
-const H1_LEVELS = {
-  advanced:`응용 문제는 평행선의 넓이비, 각의 이등분선 성질까지 엮여 나와 중등 기하가 탄탄해야 접근이 가능합니다.`,
-  basic:`공수2는 공수1의 계산력에 도형 감각까지 요구되어, 개념 이해에 그쳤다면 난도가 급히 올랐다고 느낍니다.`,
-};
-const H1_LIST = `① 도형·그래프 유형 반복 훈련
-② 풀이 방향을 잡는 사고 과정 훈련
-③ 타 학교 기출과 고난도 문제 대비`;
-const H1_LIST_SET = `① 도형·그래프 유형 반복 훈련
-② 집합·명제 빈출 유형 정리
-③ 타 학교 기출과 고난도 문제 대비`;
-const H1_EXTRA_SET = `여기에 집합까지 포함되어 새 기호·용어를 정확히 다루는 능력도 필요합니다.`;
-const H1_EXTRA_PROP = `여기에 집합과 명제까지 포함되어 진리집합·필요충분조건의 정확한 이해도 필요합니다.`;
-const H1_EXTRA_PROP_ALL = `여기에 명제의 증명·절대부등식까지 포함되며, 서술형 단골 포인트라 꼼꼼한 대비가 필요합니다.`;
-const h1Range = (id, label, rangeText, extra, list) => ({
-  id, label, rangeText,
-  lecture:'[고1 공통수학2 내신 대비 특강]',
-  core:'도형 파트', goal:'어떤 성질을 활용해야 하는지',
-  intro:H1_INTRO(rangeText, extra), list:list || H1_LIST, levels:H1_LEVELS,
-});
+답변 주신 내용을 바탕으로 필요한 경우 개별 안내드리겠습니다. 감사합니다!`;
+const COMMON_LINE = '개념은 알고 있지만 응용 문제에서 막히거나 특정 유형에서 실수가 반복된다면, 부족한 부분을 보완하는 데 도움이 될 수 있습니다.';
 
-/* ========== 중3 공통 블록 ========== */
-const M3_INTRO = (rangeText, extra) => `이번 시험범위(${rangeText})의 최대 난관은 삼각비입니다. 값을 외운다고 풀리지 않고, 그림에서 직각삼각형을 찾거나 보조선을 그어 만드는 힘이 필요합니다.${extra ? ' ' + extra : ''}`;
-const M3_LEVELS = {
-  advanced:`응용 문제는 삼각비에 닮음·피타고라스까지 엮여 나오고, 고1 도형의 방정식으로 이어집니다.`,
-  basic:`피타고라스나 무리수(√) 계산이 익숙하지 않으면 삼각비 값 구하기부터 막혀, 기본기부터 단계를 밟아야 합니다.`,
-};
-const M3_LIST_TRI = `① 삼각비·도형 유형 반복 훈련
-② 직각삼각형을 찾아 풀이 방향을 잡는 훈련
-③ 타 학교 기출과 고난도 문제 대비`;
-const M3_LIST_CIR = `① 삼각비·원의 성질 유형 반복 훈련
-② 직각삼각형과 보조선을 찾는 사고 훈련
-③ 타 학교 기출과 고난도 문제 대비`;
-
-/* ========== 고2 미적분Ⅰ 공통 블록 ========== */
-const H2M_INTRO = (rangeText, extra) => `이번 시험범위(${rangeText})의 최대 난관은 함수의 극한과 연속입니다. 대입으로 풀리지 않고, 그래프를 읽고 좌·우극한을 나누어 살피는 판단력이 필요합니다.${extra ? ' ' + extra : ''}`;
-const H2M_LEVELS = (withDiff) => ({
-  advanced:`응용 문제는 ${withDiff ? '극한·연속에 미분계수까지' : '극한과 연속 조건을'} 엮은 합답형·서술형이 많아 공식만으로는 풀리지 않습니다.`,
-  basic:`그래프 해석이나 식 변형이 익숙하지 않으면 극한부터 막혀, 기본기부터 단계를 밟아야 합니다.`,
-});
-
-/* ========== 고2 대수(지수·로그) 공통 블록 ========== */
-const H2A_INTRO = (rangeText, withTrig) => `이번 시험범위(${rangeText})의 최대 난관은 지수·로그함수입니다. 로그 계산은 한 번의 실수로 답이 틀어지고, 그래프의 이동과 조건 해석이 결합돼 접근 순서를 스스로 판단해야 합니다.${withTrig ? ' 여기에 삼각함수 그래프까지 포함됩니다.' : ''}`;
-const H2A_LEVELS = (withTrig) => ({
-  advanced:`응용 문제는 그래프에 대칭·닮음·넓이비를 엮거나 미지수의 범위를 묻는 등, 공식만으로는 풀리지 않습니다.`,
-  basic:`지수법칙이나 그래프 해석이 익숙하지 않으면 지수·로그부터 막혀, 로그 계산 같은 기본기부터 잡아야 합니다.`,
-});
-
-/* ========== 중2 공통 블록 (2022 개정 · 도형의 성질) ========== */
-const M2_INTRO = (rangeText, extra) => `이번 시험범위(${rangeText})의 최대 난관은 도형의 성질입니다. 그림에서 쓸 성질을 찾아 보조선을 긋는 힘과, 증명 서술형을 논리적으로 쓰는 연습이 필요합니다.${extra ? ' ' + extra : ''}`;
-const M2_LEVELS = {
-  advanced:`응용 문제는 성질에 합동·각도 추적·넓이 조건까지 엮여 나오고, 중3 닮음·삼각비로 이어집니다.`,
-  basic:`계산 중심이던 1학기와 달라, 중1 기본 도형과 합동이 약하면 성질을 적용하는 단계부터 막힙니다.`,
-};
-/* 닮음 포함 범위용 수준별 문단 — 닮음 비중 강화 */
-const M2_LEVELS_SIM = {
-  advanced:`특히 닮음은 겹친 도형에서 닮은 삼각형을 찾고 넓이비를 연결하는 문제가 변별력을 가르는 고난도로 출제됩니다.`,
-  basic:`닮음은 대응변을 짝지어 비례식을 세우는 기본기가 흔들리면 이후 문제 전체가 막히는 단원입니다.`,
-};
-const M2_LIST = (first) => `① ${first} 유형 반복 훈련
-② 쓸 성질·보조선 찾기와 증명 서술형 훈련
-③ 타 학교 기출과 고난도 문제 대비`;
-const M2_LIST_SIM = `① 도형의 성질·닮음 유형 반복 훈련
-② 닮은 삼각형 찾기와 증명 서술형 훈련
-③ 타 학교 기출과 고난도 문제 대비`;
-const m2Range = (id, label, rangeText, core, listFirst, extra, levels, list) => ({
-  id, label, rangeText, core,
-  lecture:'[중2 2학기 내신 대비 특강]', goal:'어떤 성질을 활용해야 하는지',
-  intro:M2_INTRO(rangeText, extra), list:list || M2_LIST(listFirst), levels:levels || M2_LEVELS,
-});
-
-/* ========== 중1 공통 블록 (2022 개정 · 기본 도형/평면도형) ========== */
-const M1_INTRO = (rangeText, extra) => `이번 시험범위(${rangeText})의 최대 난관은 도형입니다. 연산 중심이던 1학기와 달리 그림과 기호를 정확히 읽어야 하고, 용어·기호를 잘못 써 감점되는 경우도 많습니다.${extra ? ' ' + extra : ''}`;
-const M1_LEVELS = {
-  advanced:`응용 문제는 평행선·합동·넓이 조건까지 엮여 나오고, 중2 도형의 성질로 이어집니다.`,
-  basic:`처음 접하는 용어와 기호에서부터 막히는 학생이 많아, 기본 용어 정리부터 단계를 밟아야 합니다.`,
-};
-const M1_LIST = (first) => `① ${first} 유형 반복 훈련
-② 그림 속 조건 찾기와 용어·기호 서술형 훈련
-③ 타 학교 기출과 고난도 문제 대비`;
-const m1Range = (id, label, rangeText, core, listFirst, extra) => ({
-  id, label, rangeText, core,
-  lecture:'[중1 2학기 내신 대비 특강]', goal:'어떤 성질을 활용해야 하는지',
-  intro:M1_INTRO(rangeText, extra), list:M1_LIST(listFirst), levels:M1_LEVELS,
-});
-
-const GRADES = [
-
-/* ========================= 중1 ========================= */
-{ id:'m1', label:'중1', school:'middle', ranges:[
-  m1Range('m1r1', '기본 도형 ~ 작도와 합동', '기본 도형 ~ 작도와 합동',
-    '기본 도형·합동 파트', '기본 도형·작도와 합동'),
-  m1Range('m1r2', '기본 도형 ~ 다각형의 성질', '기본 도형 ~ 다각형의 성질',
-    '기본 도형·다각형 파트', '기본 도형·다각형',
-    '여기에 다각형까지 포함되어 내각·외각의 합으로 각을 추적하는 훈련도 필요합니다.'),
-  m1Range('m1r3', '기본 도형 ~ 원과 부채꼴', '기본 도형 ~ 원과 부채꼴',
-    '평면도형 파트', '기본 도형·평면도형',
-    '여기에 원과 부채꼴까지 포함되어 호의 길이·넓이 공식을 변형해 쓰는 능력도 요구됩니다.'),
-  m1Range('m1r4', '기본 도형 ~ 입체도형의 겉넓이와 부피', '기본 도형 ~ 입체도형의 겉넓이와 부피',
-    '평면도형·입체도형 파트', '평면도형·입체도형',
-    '여기에 입체도형까지 포함되어 겉넓이·부피를 구하는 공간 감각도 요구됩니다.'),
-  /* 1학기 마지막 단원(좌표평면과 그래프)부터 출제하는 학교용 */
-  m1Range('m1r5', '좌표평면과 그래프 ~ 작도와 합동 (1학기 단원 포함)', '좌표평면과 그래프 ~ 작도와 합동',
-    '기본 도형·합동 파트', '좌표평면·기본 도형·합동',
-    '여기에 1학기 마지막 단원인 좌표평면과 그래프까지 포함되어, 상황을 그래프로 읽는 훈련도 함께 필요합니다.'),
-  m1Range('m1r6', '좌표평면과 그래프 ~ 다각형의 성질 (1학기 단원 포함)', '좌표평면과 그래프 ~ 다각형의 성질',
-    '기본 도형·다각형 파트', '좌표평면·기본 도형·다각형',
-    '1학기 마지막 단원인 좌표평면과 그래프부터 다각형까지 걸치는 넓은 범위라 학습량 배분도 중요합니다.'),
-  m1Range('m1r7', '좌표평면과 그래프 ~ 원과 부채꼴 (1학기 단원 포함)', '좌표평면과 그래프 ~ 원과 부채꼴',
-    '평면도형 파트', '좌표평면·기본 도형·평면도형',
-    '1학기 마지막 단원인 좌표평면과 그래프부터 부채꼴까지 걸치는 넓은 범위라 학습량 배분도 중요합니다.'),
-]},
-
-/* ========================= 중2 ========================= */
-{ id:'m2', label:'중2', school:'middle', ranges:[
-  m2Range('m2r1', '이등변삼각형 ~ 평행사변형', '이등변삼각형 ~ 평행사변형',
-    '도형의 성질 파트', '삼각형·사각형의 성질'),
-  m2Range('m2r2', '이등변삼각형 ~ 여러 가지 사각형 (도형의 성질 전체)', '이등변삼각형 ~ 여러 가지 사각형',
-    '도형의 성질 파트', '삼각형·사각형의 성질'),
-  m2Range('m2r3', '이등변삼각형 ~ 도형의 닮음 (2025 단대부중 등)', '이등변삼각형 ~ 도형의 닮음',
-    '닮음 파트', '삼각형·사각형의 성질과 도형의 닮음',
-    `여기에 닮음까지 포함되는데, 배점 높은 고난도 문제는 대부분 닮음에서 출제됩니다.`,
-    M2_LEVELS_SIM, M2_LIST_SIM),
-  m2Range('m2r4', '이등변삼각형 ~ 여러 가지 사각형 + 피타고라스 정리 (2025 역삼중 등)', '이등변삼각형 ~ 여러 가지 사각형, 피타고라스 정리',
-    '도형의 성질·피타고라스 파트', '도형의 성질·피타고라스',
-    '여기에 피타고라스 정리까지 포함되어 계산 정확성도 함께 요구됩니다.'),
-]},
-
-/* ========================= 중3 ========================= */
-{ id:'m3', label:'중3', school:'middle', ranges:[
-  { id:'m3r1', label:'삼각비 ~ 삼각비의 활용',
-    lecture:'[중3 2학기 내신 대비 특강]', rangeText:'삼각비 ~ 삼각비의 활용',
-    core:'삼각비 파트', goal:'어떤 성질을 활용해야 하는지',
-    intro:M3_INTRO('삼각비 ~ 삼각비의 활용'), list:M3_LIST_TRI, levels:M3_LEVELS },
-  { id:'m3r2', label:'삼각비 ~ 원과 직선 (2025 서울삼육중 등)',
-    lecture:'[중3 2학기 내신 대비 특강]', rangeText:'삼각비 ~ 원의 성질(원과 직선)',
-    core:'삼각비·원의 성질 파트', goal:'어떤 성질을 활용해야 하는지',
-    intro:M3_INTRO('삼각비 ~ 원의 성질(원과 직선)', '여기에 원의 성질까지 포함되어 현·접선 성질을 그림에 적용하는 연습도 필요합니다.'),
-    list:M3_LIST_CIR, levels:M3_LEVELS },
-  { id:'m3r3', label:'삼각비 ~ 원주각 (원의 성질 전체)',
-    lecture:'[중3 2학기 내신 대비 특강]', rangeText:'삼각비 ~ 원의 성질(원과 직선, 원주각)',
-    core:'삼각비·원의 성질 파트', goal:'어떤 성질을 활용해야 하는지',
-    intro:M3_INTRO('삼각비 ~ 원의 성질(원과 직선, 원주각)', '여기에 원의 성질 전체가 포함되어 접선의 길이·원주각까지 적용하는 연습이 필요합니다.'),
-    list:M3_LIST_CIR, levels:M3_LEVELS },
-]},
-
-/* ========================= 고1 ========================= */
-{ id:'h1', label:'고1', school:'high', ranges:[
-  h1Range('h1r1', '평면좌표 ~ 원의 방정식', '평면좌표 ~ 원의 방정식'),
-  h1Range('h1r2', '평면좌표 ~ 도형의 이동 (2025 현대고·단대부고 등)', '평면좌표 ~ 도형의 이동'),
-  h1Range('h1r3', '평면좌표 ~ 집합 (2025 대전외고·인천포스코고 등)', '평면좌표 ~ 집합', H1_EXTRA_SET, H1_LIST_SET),
-  h1Range('h1r4', '평면좌표 ~ 명제 (절대부등식 전)', '평면좌표 ~ 명제(절대부등식 전)', H1_EXTRA_PROP, H1_LIST_SET),
-  h1Range('h1r5', '평면좌표 ~ 집합과 명제 전체 (절대부등식 포함)', '평면좌표 ~ 집합과 명제 전체', H1_EXTRA_PROP_ALL, H1_LIST_SET),
-  h1Range('h1r6', '집합 ~ 도형의 이동 (단원 순서 재배열, 2025 휘문고)', '집합 ~ 도형의 이동', H1_EXTRA_SET, H1_LIST_SET),
-]},
-
-/* ========================= 고2 ========================= */
-{ id:'h2', label:'고2', school:'high', ranges:[
-  { id:'h2r1', label:'미적분Ⅰ · 함수의 극한 ~ 함수의 연속',
-    lecture:'[고2 미적분Ⅰ 내신 대비 특강]', rangeText:'함수의 극한 ~ 함수의 연속',
-    core:'극한·연속 파트', goal:'어떤 개념과 조건을 활용해야 하는지',
-    intro:H2M_INTRO('함수의 극한 ~ 함수의 연속'),
-    list:`① 극한·연속 유형 반복 훈련
-② 그래프와 조건을 읽고 풀이 방향을 잡는 훈련
-③ 타 학교 기출과 고난도 문제 대비`,
-    levels:H2M_LEVELS(false) },
-  { id:'h2r2', label:'미적분Ⅰ · 함수의 극한 ~ 미분계수와 도함수',
-    lecture:'[고2 미적분Ⅰ 내신 대비 특강]', rangeText:'함수의 극한 ~ 미분계수와 도함수',
-    core:'극한·미분 파트', goal:'어떤 개념과 조건을 활용해야 하는지',
-    intro:H2M_INTRO('함수의 극한 ~ 미분계수와 도함수'),
-    list:`① 극한·연속·미분계수 유형 반복 훈련
-② 그래프와 조건을 읽고 풀이 방향을 잡는 훈련
-③ 타 학교 기출과 고난도 문제 대비`,
-    levels:H2M_LEVELS(true) },
-  { id:'h2r3', label:'미적분Ⅰ · 함수의 극한 ~ 접선의 방정식 (2025 휘문고·양재고·서초고)',
-    lecture:'[고2 미적분Ⅰ 내신 대비 특강]', rangeText:'함수의 극한 ~ 도함수의 활용(접선의 방정식)',
-    core:'극한·미분 파트', goal:'어떤 개념과 조건을 활용해야 하는지',
-    intro:H2M_INTRO('함수의 극한 ~ 도함수의 활용(접선의 방정식)', '여기에 접선의 방정식까지 포함되어 미분 계산의 정확성과 속도도 요구됩니다.'),
-    list:`① 극한·미분·접선의 방정식 유형 반복 훈련
-② 그래프와 조건을 읽고 풀이 방향을 잡는 훈련
-③ 타 학교 기출과 고난도 문제 대비`,
-    levels:H2M_LEVELS(true) },
-  { id:'h2r4', label:'대수 · 지수와 로그 ~ 지수함수와 로그함수의 활용',
-    lecture:'[고2 대수 내신 대비 특강]', rangeText:'지수와 로그 ~ 지수함수와 로그함수의 활용',
-    core:'지수·로그 파트', goal:'어떤 개념과 조건을 활용해야 하는지',
-    intro:H2A_INTRO('지수와 로그 ~ 지수함수와 로그함수의 활용', false),
-    list:`① 지수·로그 유형 반복 훈련
-② 그래프와 조건을 읽고 풀이 방향을 잡는 훈련
-③ 타 학교 기출과 고난도 문제 대비`,
-    levels:H2A_LEVELS(false) },
-  { id:'h2r5', label:'대수 · 지수와 로그 ~ 삼각함수의 그래프',
-    lecture:'[고2 대수 내신 대비 특강]', rangeText:'지수와 로그 ~ 삼각함수의 그래프',
-    core:'지수·로그 파트', goal:'어떤 개념과 조건을 활용해야 하는지',
-    intro:H2A_INTRO('지수와 로그 ~ 삼각함수의 그래프', true),
-    list:`① 지수·로그·삼각함수 유형 반복 훈련
-② 그래프와 조건을 읽고 풀이 방향을 잡는 훈련
-③ 타 학교 기출과 고난도 문제 대비`,
-    levels:H2A_LEVELS(true) },
-  { id:'h2r6', label:'대수 · 삼각함수 ~ 등차수열과 등비수열 (연간 편성 학교)',
-    lecture:'[고2 대수 내신 대비 특강]', rangeText:'삼각함수 ~ 등차수열과 등비수열',
-    core:'삼각함수·수열 파트', goal:'어떤 개념과 성질을 활용해야 하는지',
-    intro:`이번 시험범위(삼각함수 ~ 등차수열과 등비수열)의 최대 난관은 삼각함수입니다. 주기와 최대·최소가 달라지는 그래프를 읽고 사인·코사인법칙 중 무엇을 쓸지 스스로 판단해야 하며, 수열은 조건에서 규칙을 찾아 식으로 옮기는 훈련이 필요합니다.`,
-    list:`① 삼각함수 그래프·수열 유형 반복 훈련
-② 사인·코사인법칙 도형 활용 응용 훈련
-③ 타 학교 기출과 고난도 문제 대비`,
-    levels:{
-      advanced:`응용 문제는 그래프에 대칭성·주기성을 엮거나 수열의 규칙을 일반화해야 해, 공식만으로는 풀리지 않습니다.`,
-      basic:`그래프 해석이나 문자 계산이 익숙하지 않으면 규칙을 식으로 옮기는 단계부터 막혀, 기본 계산부터 잡아야 합니다.`,
-    } },
-  { id:'h2r7', label:'확률과 통계 · 순열과 조합 ~ 확률의 뜻과 활용',
-    lecture:'[고2 확률과 통계 내신 대비 특강]', rangeText:'순열과 조합 ~ 확률의 뜻과 활용',
-    core:'순열·조합 파트', goal:'어떤 기준으로 세어야 하는지',
-    intro:`이번 시험범위(순열과 조합 ~ 확률의 뜻과 활용)의 최대 난관은 경우의 수입니다. 공식 대입으로는 풀리지 않고, 무엇을 기준으로 나누어 셀지 스스로 판단해야 합니다. 기준을 잘못 잡으면 중복해 세거나 빠뜨려 풀고도 틀리게 됩니다.`,
-    list:`① 상황별 순열·조합 유형 반복 훈련
-② 세는 기준을 세워 풀이 방향을 잡는 훈련
-③ 타 학교 기출과 고난도 문제 대비`,
-    levels:{
-      advanced:`응용 문제는 상황을 케이스로 나누거나 여사건·조건부확률을 함께 써야 해, 공식만으로는 풀리지 않습니다.`,
-      basic:`계산은 어렵지 않아 만만해 보이지만, 세는 기준 없이 풀어온 학생일수록 점수가 안정되지 않습니다.`,
-    } },
-]},
-];
-
-/* ───────────────────── 메시지 조립 ───────────────────── */
-const DOUBLE_SURNAMES = ['남궁','제갈','선우','독고','황보','사공','서문','어금','강전','망절'];
+/* ───── 이름 처리 ───── */
+const DOUBLE_SURNAMES = ['남궁','제갈','선우','독고','황보','사공','서문'];
 function givenName(raw){
-  // "583-47149고건영"처럼 학번·기호가 섞여 있으면 마지막 한글 덩어리를 성+이름으로 간주
-  const runs = raw.match(/[가-힣]+/g);
-  if (!runs) return raw;
-  const name = runs[runs.length - 1];
-  // 성을 떼고 이름만: 3글자 → 뒤 2글자(박수민 → 수민), 2글자 → 뒤 1글자(고은 → 은)
-  if (name.length >= 4) return DOUBLE_SURNAMES.includes(name.slice(0, 2)) ? name.slice(2) : name.slice(1);
-  if (name.length >= 2) return name.slice(1);
-  return name;
+  const runs = raw.match(/[가-힣]+/g); if (!runs) return raw;
+  const n = runs[runs.length - 1];
+  if (n.length >= 4) return DOUBLE_SURNAMES.includes(n.slice(0,2)) ? n.slice(2) : n.slice(1);
+  if (n.length >= 2) return n.slice(1);
+  return n;
 }
-function josaName(name){
-  // 받침 있으면 '이' 붙여 부르기: 수민 → 수민이, 창세 → 창세
-  const ch = name.charCodeAt(name.length - 1);
-  if (ch >= 0xAC00 && ch <= 0xD7A3 && (ch - 0xAC00) % 28 > 0) return name + '이';
-  return name;
-}
-function buildMessage(o){
-  // o: {teacher, grade, range, level, payUrl, student}
-  const r = o.range;
-  const lv = r.levels[o.level];
-  const stu = josaName(givenName(o.student || 'OO'));
-  return `안녕하세요, 학부모님. 밀당PT 수학 ${o.teacher || '000'} 선생님입니다.
-${r.lecture}이 개설되었습니다.
+const hasBatchim = w => { const c = w.charCodeAt(w.length-1); return c>=0xAC00 && c<=0xD7A3 && (c-0xAC00)%28>0; };
+const callName = raw => { const n = givenName(raw || 'OO'); return hasBatchim(n) ? n + '이' : n; };
+const objJosa = w => hasBatchim(w) ? '을' : '를';
 
-${r.intro}
-
-${lv}
-
-특강에서는
-${r.list}
-
-를 통해 "${r.goal}"를 빠르게 판단하는 힘을 길러드립니다.
-
-${stu}의 효과적인 시험대비를 위해 특강 신청 링크 안내드립니다!
-${o.payUrl}`;
-}
-
-/* ───────────────────── 상태 ───────────────────── */
-const LS_KEY = 'mildang-teukgang-v3';
-const DEFAULT_RANGES = { m1:'m1r3', m2:'m2r2', m3:'m3r1', h1:'h1r2', h2:'h2r3' };
-let state = {
-  teacher:'', gradeId:'h1',
-  rangeByGrade:Object.assign({}, DEFAULT_RANGES),
-  level:'advanced', payId:{ high:'hw', middle:'mw' },
-  students:[], selected:0, namesRaw:'',
-};
-try{
-  const saved = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
-  if (saved && typeof saved === 'object'){
-    state = Object.assign(state, saved);
-    state.rangeByGrade = Object.assign({}, DEFAULT_RANGES, saved.rangeByGrade);
-    state.payId = Object.assign({high:'hw',middle:'mw'}, saved.payId);
-    if(!Array.isArray(state.students)) state.students = [];
-  }
-}catch(e){ /* storage unavailable — run in memory */ }
+/* ───── 상태 ───── */
+const LS_KEY = 'mildang-gimal-ment-v1';
+let state = { teacher:'', gradeId:'m1', students:[], selected:0, namesRaw:'', custom:{} };
+try{ const s = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); if (s && typeof s === 'object'){ state = Object.assign(state, s); if(!Array.isArray(state.students)) state.students=[]; if(!state.custom) state.custom={}; } }catch(e){}
 function save(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){} }
 
-const grade = () => GRADES.find(g => g.id === state.gradeId) || GRADES[1];
-const range = () => { const g = grade(); return g.ranges.find(r => r.id === state.rangeByGrade[g.id]) || g.ranges[0]; };
-const payOpt = () => { const g = grade(); const opts = PAY_LINKS[g.school]; return opts.find(p => p.id === state.payId[g.school]) || opts[0]; };
-const stuLevel = s => s.level || state.level;
-const lvLabel = id => (LEVELS.find(l => l.id === id) || LEVELS[0]).label;
-const lvShort = id => (LEVELS.find(l => l.id === id) || LEVELS[0]).short;
-
+const weakList = () => [...(WEAK[state.gradeId] || []), ...WEAK.common];
+const weakOf = s => (s.weak && s.weak[state.gradeId]) || '';
+const ownOf = s => (s.own && s.own[state.gradeId]) || '';
+function setWeak(s, v){ s.weak = s.weak || {}; s.weak[state.gradeId] = v; }
+function setOwn(s, v){ s.own = s.own || {}; s.own[state.gradeId] = v; }
+function phraseOf(s){
+  const w = weakOf(s);
+  if (w === '__own') return ownOf(s).trim();
+  const o = weakList().find(x => x.id === w); return o ? o.phrase : '';
+}
+function personalLine(s){
+  const p = phraseOf(s);
+  if (!p) return COMMON_LINE;
+  return `특히 ${callName(s.name)}는 ${p}${objJosa(p)} 조금 더 연습하면 좋을 것 같아 이번 특강을 함께 안내드립니다.`;
+}
+const tpl = () => state.custom[state.gradeId] || DEFAULT_TPL;
 function msgFor(s){
-  return buildMessage({
-    teacher: state.teacher.trim(), grade: grade(), range: range(),
-    level: stuLevel(s), payUrl: payOpt().url, student: s.name,
-  });
+  return tpl().split('{선생님}').join(state.teacher.trim() || '000')
+              .split('{학생}').join(callName(s.name))
+              .split('{맞춤문장}').join(personalLine(s));
 }
 
-/* ───────────────────── 렌더 ───────────────────── */
+/* ───── 렌더 ───── */
 const $ = id => document.getElementById(id);
-const esc = t => t.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const esc = t => String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 function renderSegs(){
   const sg = $('segGrade'); sg.innerHTML = '';
-  GRADES.forEach(g => {
-    const b = document.createElement('button');
-    b.type = 'button'; b.textContent = g.label;
-    b.className = g.id === state.gradeId ? 'on' : '';
-    b.onclick = () => { state.gradeId = g.id; resetCopied(false); save(); renderAll(); };
-    sg.appendChild(b);
-  });
-  const sl = $('segLevel'); sl.innerHTML = '';
-  LEVELS.forEach(l => {
-    const b = document.createElement('button');
-    b.type = 'button'; b.textContent = l.label;
-    b.className = l.id === state.level ? 'on' : '';
-    b.onclick = () => { state.level = l.id; resetCopied(false); save(); renderAll(); };
-    sl.appendChild(b);
-  });
-}
-function renderSelects(){
-  const g = grade();
-  const sr = $('selRange'); sr.innerHTML = '';
-  g.ranges.forEach(r => {
-    const op = document.createElement('option');
-    op.value = r.id; op.textContent = r.label;
-    if (r.id === state.rangeByGrade[g.id]) op.selected = true;
-    sr.appendChild(op);
-  });
-  const sp = $('selPay'); sp.innerHTML = '';
-  PAY_LINKS[g.school].forEach(p => {
-    const op = document.createElement('option');
-    op.value = p.id; op.textContent = p.label;
-    if (p.id === state.payId[g.school]) op.selected = true;
-    sp.appendChild(op);
-  });
+  GRADES.forEach(g => { const b = document.createElement('button'); b.type='button'; b.textContent=g.label; b.className = g.id===state.gradeId?'on':'';
+    b.onclick = () => { state.gradeId = g.id; resetCopied(false); save(); renderAll(); }; sg.appendChild(b); });
 }
 function renderRoster(){
   const box = $('roster'); box.innerHTML = '';
-  if (!state.students.length){
-    box.innerHTML = '<div class="empty">왼쪽에 학생 명단을 붙여넣고<br>「명단 적용」을 누르세요.</div>';
-  }
+  if (!state.students.length) box.innerHTML = '<div class="empty">왼쪽에 학생 명단을 붙여넣고<br>「명단 적용」을 누르세요.</div>';
   state.students.forEach((s, i) => {
-    const row = document.createElement('div');
-    row.className = 'stu' + (i === state.selected ? ' sel' : '');
-    row.innerHTML = `<span class="nm">${s.copied ? '<span class="done">✓</span>' : ''}${esc(s.name)}</span>`;
+    const row = document.createElement('div'); row.className = 'stu' + (i===state.selected?' sel':'');
+    row.innerHTML = `<span class="nm">${s.copied?'<span class="done">✓</span>':''}${esc(s.name)}</span>`;
     row.onclick = () => { state.selected = i; save(); renderRoster(); renderPreview(); };
 
-    const chip = document.createElement('button');
-    chip.type = 'button';
-    chip.className = 'chip' + (stuLevel(s) === 'basic' ? ' basic' : '');
-    chip.textContent = lvShort(stuLevel(s));
-    chip.title = '클릭하여 이 학생의 수준 변경';
-    chip.onclick = e => {
-      e.stopPropagation();
-      s.level = stuLevel(s) === 'advanced' ? 'basic' : 'advanced';
-      s.copied = false; save(); renderRoster(); renderPreview();
-    };
-    row.appendChild(chip);
+    const sel = document.createElement('select'); sel.title = '취약 단원 선택';
+    sel.innerHTML = '<option value="">취약 단원 선택 안 함</option>' +
+      `<optgroup label="${GRADES.find(g=>g.id===state.gradeId).label} 단원">` + (WEAK[state.gradeId]||[]).map(o=>`<option value="${o.id}">${esc(o.label)}</option>`).join('') + '</optgroup>' +
+      '<optgroup label="공통">' + WEAK.common.map(o=>`<option value="${o.id}">${esc(o.label)}</option>`).join('') + '<option value="__own">직접 입력…</option></optgroup>';
+    sel.value = weakOf(s); if (weakOf(s)) sel.classList.add('on');
+    sel.onclick = e => e.stopPropagation();
+    sel.onchange = e => { setWeak(s, e.target.value); s.copied=false; state.selected=i; save(); renderRoster(); renderPreview();
+      if (e.target.value==='__own') setTimeout(()=>{ const inp=box.querySelectorAll('.stu')[i].querySelector('input.own'); inp&&inp.focus(); },0); };
 
-    const cp = document.createElement('button');
-    cp.type = 'button'; cp.className = 'btn small';
-    cp.textContent = s.copied ? '재복사' : '복사';
-    cp.onclick = e => { e.stopPropagation(); state.selected = i; copyText(msgFor(s), () => { s.copied = true; save(); renderRoster(); renderPreview(); toast(`${s.name} 메시지 복사됨`); }); };
+    if (weakOf(s) === '__own'){
+      const inp = document.createElement('input'); inp.type='text'; inp.className='own'; inp.placeholder='예: 각의 이등분선 문제'; inp.value = ownOf(s);
+      inp.onclick = e => e.stopPropagation();
+      inp.oninput = e => { setOwn(s, e.target.value); s.copied=false; state.selected=i; save(); renderPreview(); renderSum(); };
+      row.appendChild(inp);
+    } else row.appendChild(sel);
+
+    if (weakOf(s) === '__own'){
+      const back = document.createElement('button'); back.type='button'; back.className='btn small'; back.textContent='목록'; back.title='단원 목록으로 돌아가기';
+      back.onclick = e => { e.stopPropagation(); setWeak(s,''); save(); renderRoster(); renderPreview(); };
+      row.appendChild(back);
+    }
+    const cp = document.createElement('button'); cp.type='button'; cp.className='btn small'; cp.textContent = s.copied?'재복사':'복사';
+    cp.onclick = e => { e.stopPropagation(); state.selected=i; copyText(msgFor(s), () => { s.copied=true; save(); renderRoster(); renderPreview(); toast(`${s.name} 메시지 복사됨`); }); };
     row.appendChild(cp);
     box.appendChild(row);
   });
   $('cntAll').textContent = state.students.length;
-  $('cntDone').textContent = state.students.filter(s => s.copied).length;
+  $('cntDone').textContent = state.students.filter(s=>s.copied).length;
+  renderSum();
+}
+function renderSum(){
+  const rec = state.students.filter(s => phraseOf(s)).length;
+  $('sum').innerHTML = state.students.length ? `<span>맞춤 안내 <b>${rec}</b>명</span><span>공통 안내 ${state.students.length-rec}명</span>` : '';
 }
 function renderPreview(){
   const s = state.students[state.selected] || { name:'OO' };
-  $('pvName').textContent = s.name === 'OO' ? '미리보기 (학생 미선택)' : s.name;
-  const tags = [grade().label, lvLabel(stuLevel(s)), range().rangeText, payOpt().label];
-  $('pvTags').innerHTML = tags.map(t => `<span>${esc(t)}</span>`).join('');
-  $('pvMsg').textContent = msgFor(s);
+  $('pvName').textContent = s.name==='OO' ? '미리보기 (학생 미선택)' : s.name;
+  const p = phraseOf(s);
+  const tags = [GRADES.find(g=>g.id===state.gradeId).label, p ? '맞춤 문장' : '공통 문장'];
+  if (state.custom[state.gradeId]) tags.push('수정된 멘트');
+  $('pvTags').innerHTML = tags.map(t=>`<span>${esc(t)}</span>`).join('');
+  const msg = msgFor(s), line = personalLine(s);
+  $('pvMsg').innerHTML = esc(msg).replace(esc(line), `<mark>${esc(line)}</mark>`);
+  $('pvLen').textContent = `${msg.length}자 · 강조된 부분이 학생별로 바뀌는 문장입니다.`;
 }
-function renderAll(){ renderSegs(); renderSelects(); renderRoster(); renderPreview(); $('teacher').value = state.teacher; if(document.activeElement !== $('taNames')) $('taNames').value = state.namesRaw; }
+function renderAll(){ renderSegs(); renderRoster(); renderPreview(); $('teacher').value = state.teacher; if (document.activeElement !== $('taNames')) $('taNames').value = state.namesRaw; }
+function resetCopied(rerender){ state.students.forEach(s=>s.copied=false); if (rerender!==false){ save(); renderRoster(); renderPreview(); } }
 
-function resetCopied(rerender){
-  state.students.forEach(s => s.copied = false);
-  if (rerender !== false){ save(); renderRoster(); renderPreview(); }
-}
-
-/* ───────────────────── 복사 ───────────────────── */
+/* ───── 복사 ───── */
 function copyText(text, ok){
-  const fallback = () => {
-    const ta = document.createElement('textarea');
-    ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
-    document.body.appendChild(ta); ta.select();
-    let done = false;
-    try{ done = document.execCommand('copy'); }catch(e){}
-    document.body.removeChild(ta);
-    if (done) ok(); else toast('복사에 실패했습니다. 미리보기에서 직접 선택해 주세요.');
-  };
-  if (navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(text).then(ok, fallback);
-  } else fallback();
+  const fb = () => { const ta=document.createElement('textarea'); ta.value=text; ta.style.cssText='position:fixed;opacity:0'; document.body.appendChild(ta); ta.select();
+    let d=false; try{ d=document.execCommand('copy'); }catch(e){} document.body.removeChild(ta); if(d) ok(); else toast('복사에 실패했습니다. 미리보기에서 직접 선택해 주세요.'); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(ok, fb); else fb();
 }
-let toastTimer = null;
-function toast(msg){
-  const t = $('toast'); t.textContent = msg; t.classList.add('show');
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
-}
+let tt=null; function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('show'),1800); }
 
-/* ───────────────────── 이벤트 ───────────────────── */
+/* ───── 이벤트 ───── */
 $('teacher').addEventListener('input', e => { state.teacher = e.target.value; save(); renderPreview(); });
-$('selRange').addEventListener('change', e => { state.rangeByGrade[grade().id] = e.target.value; resetCopied(false); save(); renderAll(); });
-$('selPay').addEventListener('change', e => { state.payId[grade().school] = e.target.value; save(); renderPreview(); });
 $('taNames').addEventListener('input', e => { state.namesRaw = e.target.value; save(); });
 $('btnApply').addEventListener('click', () => {
-  const names = state.namesRaw.split(/[\n,、·;]+/).map(t => t.trim()).filter(Boolean);
-  const seen = new Set(); const uniq = [];
-  names.forEach(n => { if(!seen.has(n)){ seen.add(n); uniq.push(n); } });
-  const old = new Map(state.students.map(s => [s.name, s]));
-  state.students = uniq.map(n => old.get(n) || { name:n, level:null, copied:false });
-  state.selected = 0; save(); renderRoster(); renderPreview();
-  toast(`${uniq.length}명 적용됨`);
+  const names = state.namesRaw.split(/[\n,、·;]+/).map(t=>t.trim()).filter(Boolean);
+  const seen = new Set(), uniq = []; names.forEach(n => { if(!seen.has(n)){ seen.add(n); uniq.push(n); } });
+  const old = new Map(state.students.map(s=>[s.name,s]));
+  state.students = uniq.map(n => old.get(n) || { name:n, weak:{}, own:{}, copied:false });
+  state.selected = 0; save(); renderRoster(); renderPreview(); toast(`${uniq.length}명 적용됨`);
 });
-$('btnClear').addEventListener('click', () => {
-  state.namesRaw = ''; state.students = []; state.selected = 0; save(); renderAll();
-});
+$('btnClear').addEventListener('click', () => { state.namesRaw=''; state.students=[]; state.selected=0; save(); renderAll(); });
 $('btnResetCopied').addEventListener('click', () => resetCopied());
-$('btnCopy').addEventListener('click', () => {
-  const s = state.students[state.selected];
-  const text = msgFor(s || { name:'OO' });
-  copyText(text, () => {
-    if (s){ s.copied = true; save(); renderRoster(); }
-    toast(s ? `${s.name} 메시지 복사됨` : '메시지 복사됨');
-  });
+function setEdit(on){ $('editPanel').hidden=!on; $('pvMsg').hidden=on; $('pvLen').hidden=on; $('btnCopy').disabled=on; $('btnEdit').disabled=on; $('btnEdit').textContent=on?'편집 중…':'멘트 편집'; }
+$('btnEdit').addEventListener('click', () => { $('editArea').value = tpl(); setEdit(true); $('editArea').focus(); });
+$('btnEditSave').addEventListener('click', () => {
+  const t = $('editArea').value;
+  if (!t.includes('{맞춤문장}')) { toast('{맞춤문장} 자리표시자를 남겨 주세요'); return; }
+  if (t.trim()==='' || t===DEFAULT_TPL) delete state.custom[state.gradeId]; else state.custom[state.gradeId] = t;
+  resetCopied(false); save(); setEdit(false); renderAll(); toast('멘트가 저장되었습니다');
 });
+$('btnEditCancel').addEventListener('click', () => setEdit(false));
+$('btnEditDefault').addEventListener('click', () => { $('editArea').value = DEFAULT_TPL; toast('기본 멘트를 불러왔습니다. 저장을 눌러야 적용됩니다.'); });
+$('btnCopy').addEventListener('click', () => { const s = state.students[state.selected]; copyText(msgFor(s||{name:'OO'}), () => { if(s){ s.copied=true; save(); renderRoster(); } toast(s?`${s.name} 메시지 복사됨`:'메시지 복사됨'); }); });
 
 renderAll();
 </script>
